@@ -1,4 +1,3 @@
-import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Button } from "@/components/ui/button";
 import {
@@ -12,13 +11,16 @@ import {
 } from "@/components/ui/form";
 import { useForm } from "react-hook-form";
 import { Input } from "@/components/ui/input";
-
-const loginScheme = z.object({
-  username: z.string().min(2, "Слишком короткое").max(50, "Слишком длинное"),
-  password: z.string().min(1, "Введите пароль").max(50, "Слишком длинный"),
-});
+import { loginScheme } from "@/schemes/loginScheme";
+import type z from "zod";
+import { useLogin } from "@/hooks/userLogin";
+import { useNavigate } from "react-router";
+import { useAuthStore } from "@/stores/atuhStore";
 
 const Login = () => {
+  const mutation = useLogin();
+  const navigate = useNavigate();
+  const { isAuthenticated } = useAuthStore();
   const form = useForm<z.infer<typeof loginScheme>>({
     resolver: zodResolver(loginScheme),
     defaultValues: {
@@ -27,8 +29,14 @@ const Login = () => {
     },
   });
 
+  if (isAuthenticated) {
+    navigate("/dashboard");
+    return null;
+  }
+
   const onSubmit = (data: z.infer<typeof loginScheme>) => {
     console.log(data);
+    mutation.mutate({ username: data.username, password: data.password });
   };
 
   return (
