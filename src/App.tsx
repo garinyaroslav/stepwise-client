@@ -2,10 +2,11 @@ import { lazy, Suspense } from "react";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { ProtectedRoute } from "./components/ProtectedRoute";
-import { useAuthStore } from "./stores/atuhStore";
 import { LoadingFallback } from "./components/LoadingFallback";
 import { UserRole } from "./types/auth/UserRole";
 import { queryClient } from "./queryClient";
+import { Unauthorized } from "./pages/Unauthorized";
+import { useAuthStore } from "./stores/authStore";
 const Login = lazy(() => import("./pages/Login"));
 
 function AppContent() {
@@ -60,7 +61,7 @@ function AppContent() {
         }
       />
 
-      <Route path="/unauthorized" element={<div>Access denied</div>} />
+      <Route path="/unauthorized" element={<Unauthorized />} />
       <Route path="*" element={<Navigate to="/login" />} />
     </Routes>
   );

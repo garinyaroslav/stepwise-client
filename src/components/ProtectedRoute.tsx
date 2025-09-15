@@ -1,4 +1,4 @@
-import { useAuthStore } from "@/stores/atuhStore";
+import { useAuthStore } from "@/stores/authStore";
 import type { UserRole } from "@/types/auth/UserRole";
 import { hasRoleAccess } from "@/utils/hasRoleAccess";
 import { Navigate } from "react-router";

@@ -1,13 +1,17 @@
 import { useMutation } from "@tanstack/react-query";
-import { useAuthStore } from "@/stores/atuhStore";
 import axios from "../axios";
 import { HttpStatusCode } from "axios";
+import { useAuthStore } from "@/stores/authStore";
+
+interface CustomError extends Error {
+  message: string;
+}
 
 const loginApi = async (credentials: {
   username: string;
   password: string;
 }) => {
-  const response = await axios.post("/api/auth/signin", credentials);
+  const response = await axios.post("/auth/signin", credentials);
   if (response.status !== HttpStatusCode.Ok) throw new Error("Login failed");
   return response.data;
 };
@@ -21,8 +25,14 @@ export const useLogin = () => {
       login(data);
       // queryClient.invalidateQueries({ queryKey: ['user'] }); // if has query for user
     },
-    onError: (error) => {
+    onError: (error: any) => {
       console.error("Login error:", error);
+      const customError: CustomError = new Error(
+        error.response?.status === HttpStatusCode.Unauthorized
+          ? "Неправильный логин или пароль"
+          : "Ошибка входа. Попробуйте позже.",
+      );
+      throw customError;
     },
   });
 };

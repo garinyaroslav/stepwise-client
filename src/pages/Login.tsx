@@ -13,9 +13,9 @@ import { useForm } from "react-hook-form";
 import { Input } from "@/components/ui/input";
 import { loginScheme } from "@/schemes/loginScheme";
 import type z from "zod";
-import { useLogin } from "@/hooks/userLogin";
+import { useLogin } from "@/hooks/useLogin";
 import { useNavigate } from "react-router";
-import { useAuthStore } from "@/stores/atuhStore";
+import { useAuthStore } from "@/stores/authStore";
 
 const Login = () => {
   const mutation = useLogin();
@@ -34,10 +34,8 @@ const Login = () => {
     return null;
   }
 
-  const onSubmit = (data: z.infer<typeof loginScheme>) => {
-    console.log(data);
+  const onSubmit = (data: z.infer<typeof loginScheme>) =>
     mutation.mutate({ username: data.username, password: data.password });
-  };
 
   return (
     <div className="flex justify-center items-center flex-col size-full">
@@ -98,14 +96,25 @@ const Login = () => {
                   </FormItem>
                 )}
               />
+
+              {mutation.isError && (
+                <div className="mt-2 text-sm text-destructive">
+                  {mutation.error.message}
+                </div>
+              )}
+
               <div className="flex items-center justify-between">
                 <div className="flex items-center"></div>
                 <Button variant="link" size="sm" className="p-0">
                   Забыли пароль?
                 </Button>
               </div>
-              <Button type="submit" className="w-full">
-                Войти
+              <Button
+                type="submit"
+                disabled={mutation.isPending}
+                className="w-full"
+              >
+                {mutation.isPending ? "Вход..." : "Войти"}
               </Button>
             </form>
           </Form>
