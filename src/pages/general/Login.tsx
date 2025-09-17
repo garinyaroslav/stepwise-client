@@ -24,8 +24,8 @@ const Login = () => {
   const form = useForm<z.infer<typeof loginScheme>>({
     resolver: zodResolver(loginScheme),
     defaultValues: {
-      username: "",
-      password: "",
+      username: "admin",
+      password: "Qq@123456",
     },
   });
 
@@ -98,7 +98,7 @@ const Login = () => {
               />
 
               {mutation.isError && (
-                <div className="mt-2 text-sm text-destructive">
+                <div className="text-sm text-destructive">
                   {mutation.error.message}
                 </div>
               )}

@@ -5,9 +5,10 @@ import { ProtectedRoute } from "./components/ProtectedRoute";
 import { LoadingFallback } from "./components/LoadingFallback";
 import { UserRole } from "./types/auth/UserRole";
 import { queryClient } from "./queryClient";
-import { Unauthorized } from "./pages/Unauthorized";
 import { useAuthStore } from "./stores/authStore";
-const Login = lazy(() => import("./pages/Login"));
+import { AdminDashboard } from "./pages/admin/AdminDashboard";
+import { Unauthorized } from "./pages/general/Unauthorized";
+const Login = lazy(() => import("./pages/general/Login"));
 
 function AppContent() {
   const { isAuthenticated, user } = useAuthStore();
@@ -56,7 +57,7 @@ function AppContent() {
         path="/admin/dashboard"
         element={
           <ProtectedRoute allowedRoles={[UserRole.ADMIN]}>
-            <div>admin dashboard</div>
+            <AdminDashboard />
           </ProtectedRoute>
         }
       />
