@@ -8,6 +8,9 @@ import { queryClient } from "./queryClient";
 import { useAuthStore } from "./stores/authStore";
 import { AdminDashboard } from "./pages/admin/AdminDashboard";
 import { Unauthorized } from "./pages/general/Unauthorized";
+import { UserManagement } from "./pages/admin/UserManagement";
+import { MainManagement } from "./pages/admin/MainManagement";
+import { GroupsManagement } from "./pages/admin/GroupsManagement";
 const Login = lazy(() => import("./pages/general/Login"));
 
 function AppContent() {
@@ -38,6 +41,18 @@ function AppContent() {
       />
 
       <Route
+        path="/admin/dashboard"
+        element={
+          <ProtectedRoute allowedRoles={[UserRole.ADMIN]}>
+            <AdminDashboard />
+          </ProtectedRoute>
+        }
+      >
+        <Route path="" element={<MainManagement />} />
+        <Route path="users" element={<UserManagement />} />
+        <Route path="groups" element={<GroupsManagement />} />
+      </Route>
+      <Route
         path="/student/dashboard"
         element={
           <ProtectedRoute allowedRoles={[UserRole.STUDENT]}>
@@ -50,14 +65,6 @@ function AppContent() {
         element={
           <ProtectedRoute allowedRoles={[UserRole.TEACHER]}>
             <div>teacher dashboard</div>
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/admin/dashboard"
-        element={
-          <ProtectedRoute allowedRoles={[UserRole.ADMIN]}>
-            <AdminDashboard />
           </ProtectedRoute>
         }
       />
