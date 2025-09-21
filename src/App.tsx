@@ -11,6 +11,7 @@ import { Unauthorized } from "./pages/general/Unauthorized";
 import { UserManagement } from "./pages/admin/UserManagement";
 import { MainManagement } from "./pages/admin/MainManagement";
 import { GroupsManagement } from "./pages/admin/GroupsManagement";
+import { Toaster } from "./components/ui/sonner";
 const Login = lazy(() => import("./pages/general/Login"));
 
 function AppContent() {
@@ -81,6 +82,7 @@ function App() {
       <Suspense fallback={<LoadingFallback />}>
         <BrowserRouter>
           <AppContent />
+          <Toaster />
         </BrowserRouter>
       </Suspense>
     </QueryClientProvider>

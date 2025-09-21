@@ -47,12 +47,11 @@ export const AppSidebar = () => {
             >
               <SidebarMenuButton
                 isActive={item.title === menuVal}
-                variant="default"
                 size="lg"
                 asChild
               >
                 <Link to={item.url}>
-                  <item.icon size={34} />
+                  <item.icon />
                   <span>{item.title}</span>
                 </Link>
               </SidebarMenuButton>

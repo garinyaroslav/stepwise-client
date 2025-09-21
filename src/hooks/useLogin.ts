@@ -1,22 +1,13 @@
 import { useMutation } from "@tanstack/react-query";
-import axios from "../axios";
 import { AxiosError, HttpStatusCode } from "axios";
 import { useAuthStore } from "@/stores/authStore";
-
-const loginApi = async (credentials: {
-  username: string;
-  password: string;
-}) => {
-  const response = await axios.post("/auth/signin", credentials);
-  if (response.status !== HttpStatusCode.Ok) throw new Error("Login failed");
-  return response.data;
-};
+import { loginReq } from "@/api/endpoints";
 
 export const useLogin = () => {
   const { login } = useAuthStore();
 
   return useMutation({
-    mutationFn: loginApi,
+    mutationFn: loginReq,
     onSuccess: (data) => {
       login(data);
       // queryClient.invalidateQueries({ queryKey: ['user'] }); // if has query for user
