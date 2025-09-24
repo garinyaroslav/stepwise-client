@@ -30,6 +30,8 @@ import { useDebounce } from "@/hooks/useDebounce";
 import { toast } from "sonner";
 import { PasswordInput } from "../ui/password-input";
 import { generatePassword } from "@/utils/generatePassword";
+import { createStudent } from "@/api/endpoints";
+import { UserRole } from "@/types/auth/UserRole";
 
 export const UsersAddForm = () => {
   const [popoverOpen, setPopoverOpen] = useState(false);
@@ -49,10 +51,17 @@ export const UsersAddForm = () => {
 
   const onSubmit = async (data: z.infer<typeof studentRegister>) => {
     try {
-      // await axios.post("/api/students", data); // Adjust API endpoint as needed
+      await createStudent({
+        username: data.username,
+        email: data.email,
+        password: data.password,
+        role: UserRole.STUDENT,
+        groupId: Number(data.groupId),
+      });
+
       console.log("Student created:", data);
       toast.success("Студент успешно создан.");
-      form.reset();
+      // form.reset();
     } catch (error) {
       console.error("Error creating student:", error);
       toast.success("Произошла ошибка при создании студента.");
@@ -152,8 +161,8 @@ export const UsersAddForm = () => {
                             ? "Загрузка групп..."
                             : field.value
                               ? groups.find(
-                                  (group) => String(group.id) === field.value,
-                                )?.name
+                                (group) => String(group.id) === field.value,
+                              )?.name
                               : "Выберите группу..."}
                           <ChevronsUpDownIcon className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                         </Button>

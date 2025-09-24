@@ -1,4 +1,4 @@
-import { Group } from "@/api/types";
+import { Group } from "@/api/reqTypes";
 
 export interface GroupState {
   groups: Group[];

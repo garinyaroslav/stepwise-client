@@ -1,5 +1,5 @@
 import { getGroups } from "@/api/endpoints";
-import { Group } from "@/api/types";
+import { Group } from "@/api/reqTypes";
 import { useQuery } from "@tanstack/react-query";
 
 export const useGroups = (search: string = "") => {
