@@ -61,7 +61,7 @@ export const UsersAddForm = () => {
 
       console.log("Student created:", data);
       toast.success("Студент успешно создан.");
-      // form.reset();
+      form.reset();
     } catch (error) {
       console.error("Error creating student:", error);
       toast.success("Произошла ошибка при создании студента.");
@@ -120,27 +120,27 @@ export const UsersAddForm = () => {
             )}
           />
 
-          <div className="flex gap-2 items-end">
-            <FormField
-              control={form.control}
-              name="password"
-              render={({ field }) => (
-                <FormItem className="flex-1">
-                  <FormLabel>Пароль</FormLabel>
-                  <FormControl>
+          <FormField
+            control={form.control}
+            name="password"
+            render={({ field }) => (
+              <FormItem className="flex-1">
+                <FormLabel>Пароль</FormLabel>
+                <FormControl>
+                  <div className="flex gap-2">
                     <PasswordInput
                       placeholder="Введите пароль, который будет использовать студент при входе в систему"
                       {...field}
                     />
-                  </FormControl>
-                  <FormMessage className="whitespace-pre-line" />
-                </FormItem>
-              )}
-            />
-            <Button type="button" onClick={handleGenerate}>
-              Сгенерировать
-            </Button>
-          </div>
+                    <Button type="button" onClick={handleGenerate}>
+                      Сгенерировать
+                    </Button>
+                  </div>
+                </FormControl>
+                <FormMessage className="whitespace-pre-line" />
+              </FormItem>
+            )}
+          />
           <FormField
             control={form.control}
             name="groupId"

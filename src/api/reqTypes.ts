@@ -1,18 +1,21 @@
 import { UserRole } from "@/types/auth/UserRole";
 
 export interface Credentials {
-    password: string;
+  password: string;
 }
 
 export interface Group {
-    id: number;
-    name: string;
+  id: number;
+  name: string;
 }
 
-export interface StudentForCreate {
-    username: string;
-    email: string;
-    password: string;
-    role: UserRole;
-    groupId: number;
+export interface UserForCreate {
+  username: string;
+  email: string;
+  password: string;
+  role: UserRole;
+}
+
+export interface StudentForCreate extends UserForCreate {
+  groupId: number;
 }

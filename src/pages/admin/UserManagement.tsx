@@ -2,6 +2,8 @@ import { useState } from "react";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { UsersAddForm } from "@/components/admin/UsersAddForm";
+import { TeacherAddForm } from "@/components/admin/TeacherAddForm";
+import { AdminAddForm } from "@/components/admin/AdminAddForm";
 
 const tabItems = [
   {
@@ -50,10 +52,10 @@ export const UserManagement = () => {
             <UsersAddForm />
           </TabsContent>
           <TabsContent value="create-teacher">
-            Change your password here.
+            <TeacherAddForm />
           </TabsContent>
           <TabsContent value="create-admin">
-            Make changes to your account here.
+            <AdminAddForm />
           </TabsContent>
         </Tabs>
       </div>

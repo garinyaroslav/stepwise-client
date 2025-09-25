@@ -1,8 +1,13 @@
-import { HttpStatusCode } from "axios";
+import { AxiosResponse, HttpStatusCode } from "axios";
 import axios from "../axios";
 import { UserRole } from "@/types/auth/UserRole";
-import { Credentials, Group, StudentForCreate } from "./reqTypes";
-import { GroupResponse, StudentCreateResponse } from "./resTypes";
+import {
+  Credentials,
+  Group,
+  StudentForCreate,
+  UserForCreate,
+} from "./reqTypes";
+import { GroupResponse, UserCreateResponse } from "./resTypes";
 
 export const loginReq = async (credentials: Credentials) => {
   const response = await axios.post("/auth/signin", credentials);
@@ -24,6 +29,23 @@ export const getGroups = async (search?: string): Promise<Group[]> => {
   }
 };
 
+export const createUser = async (
+  userObj: UserForCreate,
+): Promise<AxiosResponse<UserCreateResponse>> => {
+  try {
+    const createRes = await axios.post<UserCreateResponse>(
+      "/auth/signup",
+      userObj,
+    );
+    if (createRes.status !== HttpStatusCode.Created)
+      throw new Error("User creation failed");
+
+    return createRes;
+  } catch (error) {
+    throw error instanceof Error ? error : new Error("Network error");
+  }
+};
+
 export const createStudent = async (
   studentObj: StudentForCreate,
 ): Promise<void> => {
@@ -38,16 +60,12 @@ export const createStudent = async (
 
     const studentIds = groupRes.data.students.map((s) => s.id);
 
-    const createRes = await axios.post<StudentCreateResponse>("/auth/signup", {
+    const createRes = await createUser({
       username: studentObj.username,
       email: studentObj.email,
       password: studentObj.password,
       role: UserRole.STUDENT,
     });
-
-    if (createRes.status !== HttpStatusCode.Created) {
-      throw new Error("Student creation failed");
-    }
 
     studentIds.push(createRes.data.id);
 
