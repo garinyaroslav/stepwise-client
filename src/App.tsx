@@ -49,7 +49,7 @@ function AppContent() {
           </ProtectedRoute>
         }
       >
-        <Route path="" element={<MainManagement />} />
+        <Route path="main" element={<MainManagement />} />
         <Route path="users" element={<UserManagement />} />
         <Route path="groups" element={<GroupsManagement />} />
       </Route>

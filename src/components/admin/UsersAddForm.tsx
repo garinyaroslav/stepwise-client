@@ -79,7 +79,7 @@ export const UsersAddForm = () => {
   };
 
   return (
-    <div className="bg-white p-8 rounded-lg shadow-sm">
+    <div className="bg-background border-2 p-8 rounded-lg">
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
           <FormField
@@ -161,8 +161,8 @@ export const UsersAddForm = () => {
                             ? "Загрузка групп..."
                             : field.value
                               ? groups.find(
-                                (group) => String(group.id) === field.value,
-                              )?.name
+                                  (group) => String(group.id) === field.value,
+                                )?.name
                               : "Выберите группу..."}
                           <ChevronsUpDownIcon className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                         </Button>
@@ -224,7 +224,7 @@ export const UsersAddForm = () => {
           />
           <div className="flex justify-end pt-4">
             <Button type="submit" disabled={isLoading}>
-              Создать студента
+              Зарегистрировать
             </Button>
           </div>
         </form>

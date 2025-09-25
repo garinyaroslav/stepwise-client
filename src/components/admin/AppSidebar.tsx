@@ -32,7 +32,7 @@ export const AppSidebar = () => {
   const [menuVal, setMenuVal] = useState(items[0].title);
 
   return (
-    <Sidebar className="p-4 bg-background">
+    <Sidebar className="p-4 bg-background border-r">
       <SidebarHeader>
         <h1 className="text-foreground text-2xl font-bold mb-4">
           Админ-панель

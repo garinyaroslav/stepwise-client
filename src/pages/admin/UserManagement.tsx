@@ -31,7 +31,7 @@ export const UserManagement = () => {
           <h2 className="text-3xl font-bold text-foreground">
             Управление пользователями
           </h2>
-          <p className="mt-2 opacity-70">
+          <p className="mt-2 text-muted-foreground">
             Создавайте учетные записи пользователей и группы и управляйте ими.
           </p>
         </header>

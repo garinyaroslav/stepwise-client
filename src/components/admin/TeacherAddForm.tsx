@@ -58,7 +58,7 @@ export const TeacherAddForm = () => {
   };
 
   return (
-    <div className="bg-white p-8 rounded-lg shadow-sm">
+    <div className="bg-background border-2 p-8 rounded-lg">
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
           <FormField
@@ -121,7 +121,7 @@ export const TeacherAddForm = () => {
             )}
           />
           <div className="flex justify-end pt-4">
-            <Button type="submit">Создать преподавателя</Button>
+            <Button type="submit">Зарегистрировать</Button>
           </div>
         </form>
       </Form>
