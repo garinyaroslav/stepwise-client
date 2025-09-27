@@ -19,3 +19,8 @@ export interface UserForCreate {
 export interface StudentForCreate extends UserForCreate {
   groupId: number;
 }
+
+export interface GroupCreate {
+  name: string;
+  studentIds: number[];
+}

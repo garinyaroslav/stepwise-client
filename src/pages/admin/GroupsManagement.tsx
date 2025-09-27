@@ -1,177 +1,136 @@
+import { GroupList } from "@/components/admin/GroupList";
+import { GroupSetting } from "@/components/admin/GroupSetting";
 import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogClose,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { SidebarTrigger } from "@/components/ui/sidebar";
-import { ChevronRight } from "lucide-react";
+import { Save, Users } from "lucide-react";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormMessage,
+} from "@/components/ui/form";
+import { groupNameScheme } from "@/schemes/groupNameScheme";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import z from "zod";
+import { toast } from "sonner";
+import { createGroup } from "@/api/endpoints";
 
 export const GroupsManagement = () => {
-	return (
-		<>
-			<SidebarTrigger />
-			<div className="relative flex size-full min-h-screen flex-col group/design-root overflow-x-hidden p-4">
-				<main className="flex-1 p-4">
-					<div className="max-w-7xl mx-auto">
-						<header className="mb-8">
-							<div className="flex justify-between items-center">
-								<div>
-									<h2 className="text-3xl font-bold text-foreground">
-										Управление группами
-									</h2>
-									<p className="mt-2 text-muted-foreground">
-										Настройте группы и назначьте студентов
-									</p>
-								</div>
-								<Button size="lg">Добавить группу</Button>
-							</div>
-						</header>
-						<div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-							<div className="lg:col-span-1">
-								<div className="bg-background rounded-lg border-2">
-									<div className="p-6 border-b">
-										<h3 className="text-lg font-medium leading-6 text-foreground">
-											Существующие группы
-										</h3>
-										<p className="mt-1 text-sm text-muted-foreground">
-											Выберите группу для настройки.
-										</p>
-									</div>
+  const form = useForm<z.infer<typeof groupNameScheme>>({
+    resolver: zodResolver(groupNameScheme),
+    defaultValues: {
+      groupName: "",
+    },
+  });
+  const onSubmit = async (data: z.infer<typeof groupNameScheme>) => {
+    try {
+      console.log(data);
+      await createGroup({
+        name: data.groupName,
+        studentIds: [],
+      });
 
-									<ul className="divide-y divide-gray-200">
-										<li className="p-4 hover:bg-gray-50 cursor-pointer flex justify-between items-center">
-											<div>
-												<p className="font-medium text-gray-900">Group Alpha</p>
-												<p className="text-sm text-gray-500">3 Students</p>
-											</div>
-											<ChevronRight />
-											{/* <span className="material-symbols-outlined text-gray-400"> */}
-											{/* 	chevron_right */}
-											{/* </span> */}
-										</li>
-										<li className="p-4 hover:bg-gray-50 cursor-pointer flex justify-between items-center bg-indigo-50 border-l-4 border-[var(--primary-color)]">
-											<div>
-												<p className="font-medium text-[var(--primary-color)]">
-													Group Beta
-												</p>
-												<p className="text-sm text-gray-500">2 Students</p>
-											</div>
-											<span className="material-symbols-outlined text-gray-400">
-												chevron_right
-											</span>
-										</li>
-										<li className="p-4 hover:bg-gray-50 cursor-pointer flex justify-between items-center">
-											<div>
-												<p className="font-medium text-gray-900">Group Gamma</p>
-												<p className="text-sm text-gray-500">1 Student</p>
-											</div>
-											<span className="material-symbols-outlined text-gray-400">
-												chevron_right
-											</span>
-										</li>
-									</ul>
-								</div>
-							</div>
-							<div className="lg:col-span-2">
-								<div className="bg-background rounded-lg border-2">
-									<div className="p-6 border-b border-border">
-										<h3 className="text-lg font-medium leading-6 text-gray-900">
-											Настроить группу: Бета
-										</h3>
-										<p className="mt-1 text-sm text-muted-foreground">
-											Добавляйте и удаляйте студентов из этой группы.
-										</p>
-									</div>
-									<div className="p-6">
-										<div className="mb-6">
-											<h4 className="text-md font-medium text-foreground mb-2">
-												Students in this group (2)
-											</h4>
-											<ul className="space-y-3">
-												<li className="flex items-center justify-between p-3 bg-gray-50 rounded-md">
-													<div>
-														<p className="font-medium text-gray-900">
-															Jane Smith
-														</p>
-														<p className="text-sm text-gray-500">S67890</p>
-													</div>
-													<button className="text-red-600 hover:text-red-800">
-														<span className="material-symbols-outlined">
-															remove_circle_outline
-														</span>
-													</button>
-												</li>
-												<li className="flex items-center justify-between p-3 bg-gray-50 rounded-md">
-													<div>
-														<p className="font-medium text-gray-900">
-															Another Student
-														</p>
-														<p className="text-sm text-gray-500">S54321</p>
-													</div>
-													<button className="text-red-600 hover:text-red-800">
-														<span className="material-symbols-outlined">
-															remove_circle_outline
-														</span>
-													</button>
-												</li>
-											</ul>
-										</div>
-										<div>
-											<h4 className="text-md font-medium text-foreground mb-2">
-												Доступные студенты
-											</h4>
-											<div className="mb-4">
-												<Input placeholder="Поиск студентов..." />
-											</div>
-											<ul className="space-y-3 max-h-60 overflow-y-auto pr-2">
-												<li className="flex items-center justify-between p-3 hover:bg-gray-50 rounded-md">
-													<div>
-														<p className="font-medium text-gray-900">
-															John Doe
-														</p>
-														<p className="text-sm text-gray-500">S12345</p>
-													</div>
-													<button className="text-green-600 hover:text-green-800">
-														<span className="material-symbols-outlined">
-															add_circle_outline
-														</span>
-													</button>
-												</li>
-												<li className="flex items-center justify-between p-3 hover:bg-gray-50 rounded-md">
-													<div>
-														<p className="font-medium text-gray-900">
-															Peter Jones
-														</p>
-														<p className="text-sm text-gray-500">S24680</p>
-													</div>
-													<button className="text-green-600 hover:text-green-800">
-														<span className="material-symbols-outlined">
-															add_circle_outline
-														</span>
-													</button>
-												</li>
-												<li className="flex items-center justify-between p-3 hover:bg-gray-50 rounded-md">
-													<div>
-														<p className="font-medium text-gray-900">
-															Maria Garcia
-														</p>
-														<p className="text-sm text-gray-500">S13579</p>
-													</div>
-													<button className="text-green-600 hover:text-green-800">
-														<span className="material-symbols-outlined">
-															add_circle_outline
-														</span>
-													</button>
-												</li>
-											</ul>
-										</div>
-										<div className="mt-6 flex justify-end">
-											<Button>Сохранить изменения</Button>
-										</div>
-									</div>
-								</div>
-							</div>
-						</div>
-					</div>
-				</main>
-			</div>
-		</>
-	);
+      toast.success("Группа успешно создана.");
+      form.reset();
+    } catch (error) {
+      console.error("Error creating group:", error);
+      toast.success("Произошла ошибка при создании группы.");
+    }
+  };
+
+  return (
+    <>
+      <SidebarTrigger />
+      <div className="relative flex size-full flex-col group/design-root">
+        <main className="flex-1 p-4">
+          <div className="max-w-7xl mx-auto">
+            <header className="mb-8">
+              <div className="flex justify-between items-center">
+                <div>
+                  <h2 className="text-3xl font-bold text-foreground">
+                    Управление группами
+                  </h2>
+                  <p className="mt-2 text-muted-foreground">
+                    Настройте группы и назначьте студентов
+                  </p>
+                </div>
+                <Dialog>
+                  <DialogTrigger asChild>
+                    <Button>Создать новую группу</Button>
+                  </DialogTrigger>
+                  <DialogContent className="sm:max-w-md">
+                    <Form {...form}>
+                      <form onSubmit={form.handleSubmit(onSubmit)}>
+                        <DialogHeader className="flex flex-col items-center text-center mb-4">
+                          <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-accent">
+                            <Users color="#007eda" />
+                          </div>
+                          <DialogTitle className="text-2xl">
+                            Добавить новую группу
+                          </DialogTitle>
+                          <DialogDescription>
+                            Создайте новую группу, чтобы организовать учеников.
+                          </DialogDescription>
+                        </DialogHeader>
+                        <FormField
+                          control={form.control}
+                          name="groupName"
+                          render={({ field }) => (
+                            <FormItem>
+                              <Label>Навзвание группы</Label>
+                              <FormControl>
+                                <Input
+                                  placeholder="например, ПИН-122"
+                                  {...field}
+                                />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        <p className="text-sm text-muted-foreground"></p>
+                        <DialogFooter className="flex flex-col gap-3 pt-4 sm:flex-row-reverse">
+                          <Button size="lg" className="flex-1" type="submit">
+                            <Save />
+                            Сохранить
+                          </Button>
+                          <DialogClose asChild>
+                            <Button
+                              size="lg"
+                              className="flex-1"
+                              variant="secondary"
+                            >
+                              Отмена
+                            </Button>
+                          </DialogClose>
+                        </DialogFooter>
+                      </form>
+                    </Form>
+                  </DialogContent>
+                </Dialog>
+              </div>
+            </header>
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+              <GroupList />
+              <GroupSetting />
+            </div>
+          </div>
+        </main>
+      </div>
+    </>
+  );
 };

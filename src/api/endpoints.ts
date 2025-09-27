@@ -4,6 +4,7 @@ import { UserRole } from "@/types/auth/UserRole";
 import {
   Credentials,
   Group,
+  GroupCreate,
   StudentForCreate,
   UserForCreate,
 } from "./reqTypes";
@@ -24,6 +25,20 @@ export const getGroups = async (search?: string): Promise<Group[]> => {
       throw new Error("Groups fetch failed");
     }
     return response.data;
+  } catch (error) {
+    throw error instanceof Error ? error : new Error("Network error");
+  }
+};
+
+export const createGroup = async (
+  groupObj: GroupCreate,
+): Promise<AxiosResponse<void>> => {
+  try {
+    const res = await axios.post("/group", groupObj);
+    if (res.status !== HttpStatusCode.Created)
+      throw new Error("User creation failed");
+
+    return res;
   } catch (error) {
     throw error instanceof Error ? error : new Error("Network error");
   }

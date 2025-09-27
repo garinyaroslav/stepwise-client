@@ -161,8 +161,8 @@ export const UsersAddForm = () => {
                             ? "Загрузка групп..."
                             : field.value
                               ? groups.find(
-                                  (group) => String(group.id) === field.value,
-                                )?.name
+                                (group) => String(group.id) === field.value,
+                              )?.name
                               : "Выберите группу..."}
                           <ChevronsUpDownIcon className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                         </Button>
