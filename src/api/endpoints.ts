@@ -9,6 +9,7 @@ import {
   UserForCreate,
 } from "./reqTypes";
 import { GroupResponse, UserCreateResponse } from "./resTypes";
+import { UserWithProfile } from "@/types/UserWithProfile";
 
 export const loginReq = async (credentials: Credentials) => {
   const response = await axios.post("/auth/signin", credentials);
@@ -18,12 +19,28 @@ export const loginReq = async (credentials: Credentials) => {
 
 export const getGroups = async (search?: string): Promise<Group[]> => {
   try {
-    const response = await axios.get("/group", {
+    const response = await axios.get<Group[]>("/group", {
       params: { search },
     });
-    if (response.status !== HttpStatusCode.Ok) {
+    if (response.status !== HttpStatusCode.Ok)
       throw new Error("Groups fetch failed");
-    }
+
+    return response.data;
+  } catch (error) {
+    throw error instanceof Error ? error : new Error("Network error");
+  }
+};
+
+export const getStudentsByGroupId = async (
+  groupId: number,
+): Promise<UserWithProfile[]> => {
+  try {
+    const response = await axios.get<UserWithProfile[]>(
+      `/user/student/${groupId}`,
+    );
+    if (response.status !== HttpStatusCode.Ok)
+      throw new Error("Students fetch failed");
+
     return response.data;
   } catch (error) {
     throw error instanceof Error ? error : new Error("Network error");
@@ -69,9 +86,8 @@ export const createStudent = async (
       `/group/${studentObj.groupId}`,
     );
 
-    if (groupRes.status !== HttpStatusCode.Ok) {
+    if (groupRes.status !== HttpStatusCode.Ok)
       throw new Error("Group fetch failed");
-    }
 
     const studentIds = groupRes.data.students.map((s) => s.id);
 
@@ -89,9 +105,8 @@ export const createStudent = async (
       studentIds: studentIds,
     });
 
-    if (res.status !== HttpStatusCode.Ok) {
+    if (res.status !== HttpStatusCode.Ok)
       throw new Error("Updating group with new student failed");
-    }
   } catch (error) {
     throw error instanceof Error ? error : new Error("Network error");
   }

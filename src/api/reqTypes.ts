@@ -7,6 +7,7 @@ export interface Credentials {
 export interface Group {
   id: number;
   name: string;
+  studentsCount: number;
 }
 
 export interface UserForCreate {

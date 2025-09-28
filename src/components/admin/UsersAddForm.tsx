@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
@@ -37,7 +37,7 @@ export const UsersAddForm = () => {
   const [popoverOpen, setPopoverOpen] = useState(false);
   const [search, setSearch] = useState("");
   const debouncedSearch = useDebounce(search, 500);
-  const { groups, isLoading, error } = useGroups(debouncedSearch);
+  const { groups, isLoading, error, reset } = useGroups(debouncedSearch);
 
   const form = useForm<z.infer<typeof studentRegister>>({
     resolver: zodResolver(studentRegister),
@@ -77,6 +77,12 @@ export const UsersAddForm = () => {
       toast.error("Не удалось сгенерировать подходящий пароль");
     }
   };
+
+  useEffect(() => {
+    return () => {
+      reset();
+    };
+  }, []);
 
   return (
     <div className="bg-background border-2 p-8 rounded-lg">
@@ -161,8 +167,8 @@ export const UsersAddForm = () => {
                             ? "Загрузка групп..."
                             : field.value
                               ? groups.find(
-                                (group) => String(group.id) === field.value,
-                              )?.name
+                                  (group) => String(group.id) === field.value,
+                                )?.name
                               : "Выберите группу..."}
                           <ChevronsUpDownIcon className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                         </Button>

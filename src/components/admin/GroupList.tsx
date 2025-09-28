@@ -1,30 +1,42 @@
-import { FC, useState } from "react";
+import { FC, useEffect, useState } from "react";
 import { ChevronRight } from "lucide-react";
 import { Input } from "../ui/input";
 import { useDebounce } from "@/hooks/useDebounce";
 import { useGroups } from "@/hooks/useGroups";
+import { Skeleton } from "../ui/skeleton";
 
 export const GroupList = () => {
   const [search, setSearch] = useState("");
-  const debouncedSearch = useDebounce(search, 500);
-  const { groups, isLoading, error } = useGroups(debouncedSearch);
-  const [selectedGroupId, setSelectedGroupId] = useState<number | null>(null);
+  const debouncedSearch = useDebounce(search, 800);
+  const { groups, selectedGroup, setSelectedGroup, isLoading, error, reset } =
+    useGroups(debouncedSearch);
 
   const renderGroups = () => {
-    if (isLoading) return <p>Ничего не найдено</p>;
-    if (error) return <p>Ошибка: {error}</p>;
-    if (groups.length === 0) return <p></p>;
+    if (error) return <p className="text-center py-6">Ошибка: {error}</p>;
+    if (groups.length === 0)
+      return <p className="text-center py-6">Ничего не найдено...</p>;
 
-    return groups.map((g) => (
-      <ListElem
-        key={g.id}
-        name={g.name}
-        isSelected={selectedGroupId == g.id}
-        setSelectedGroupId={() => setSelectedGroupId(g.id)}
-        numberOfStudents={0}
-      />
-    ));
+    return groups.map((g, i) => {
+      if (i > 6) return null;
+      if (isLoading) return <Skeleton key={i} className="h-20" />;
+
+      return (
+        <ListElem
+          key={g.id}
+          name={g.name}
+          isSelected={selectedGroup?.id == g.id}
+          setSelectedGroupId={() => setSelectedGroup(g)}
+          studentsCount={g.studentsCount}
+        />
+      );
+    });
   };
+
+  useEffect(() => {
+    return () => {
+      reset();
+    };
+  }, []);
 
   return (
     <div className="lg:col-span-1">
@@ -52,14 +64,14 @@ export const GroupList = () => {
 interface ListElemProps {
   isSelected: boolean;
   name: string;
-  numberOfStudents: number;
+  studentsCount: number;
   setSelectedGroupId: () => void;
 }
 
 const ListElem: FC<ListElemProps> = ({
   isSelected = false,
   name,
-  numberOfStudents = 0,
+  studentsCount = 0,
   setSelectedGroupId,
 }) => {
   return (
@@ -74,7 +86,7 @@ const ListElem: FC<ListElemProps> = ({
           {name}
         </p>
         <p className="text-sm text-muted-foreground">
-          Студентов: {numberOfStudents}
+          Студентов: {studentsCount}
         </p>
       </div>
       <ChevronRight />
