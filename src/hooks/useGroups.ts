@@ -5,35 +5,19 @@ import { UserWithProfile } from "@/types/UserWithProfile";
 import { useQuery } from "@tanstack/react-query";
 
 export const useGroups = (search: string = "") => {
-  const {
-    groups,
-    setGroups,
-    selectedGroup,
-    setSelectedGroup,
-    error,
-    setError,
-    isLoading,
-    setLoading,
-    reset,
-  } = useGroupStore();
+  const { groups, setGroups, selectedGroup, setSelectedGroup, reset } =
+    useGroupStore();
 
-  useQuery<Group[], Error>({
+  const groupsQuery = useQuery<Group[], Error>({
     queryKey: ["groups", search],
     queryFn: async () => {
-      setLoading(true);
       try {
         const data = await getGroups(search);
 
         setGroups(data);
-        setError(null);
         return data;
       } catch (err) {
-        const errorMessage =
-          err instanceof Error ? err.message : "Network error";
-        setError(errorMessage);
         throw err;
-      } finally {
-        setLoading(false);
       }
     },
     enabled: true,
@@ -45,32 +29,25 @@ export const useGroups = (search: string = "") => {
       if (!selectedGroup?.id) {
         return [];
       }
-      setLoading(true);
       try {
         const data = await getStudentsByGroupId(selectedGroup?.id);
-        setError(null);
         return data;
       } catch (err) {
-        const errorMessage =
-          err instanceof Error ? err.message : "Network error";
-        setError(errorMessage);
         throw err;
-      } finally {
-        setLoading(false);
       }
     },
-    enabled: !!selectedGroup?.id, // Only run query if groupId is provided
+    enabled: !!selectedGroup?.id,
   });
 
   return {
     groups,
     selectedGroup,
     setSelectedGroup,
-    isLoading,
-    error,
-    reset,
+    isGroupsLoading: groupsQuery.isLoading,
+    groupsError: groupsQuery.error,
     students: studentsQuery.data || [],
     isStudentsLoading: studentsQuery.isLoading,
     studentsError: studentsQuery.error,
+    reset,
   };
 };

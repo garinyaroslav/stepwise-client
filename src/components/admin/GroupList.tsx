@@ -8,17 +8,24 @@ import { Skeleton } from "../ui/skeleton";
 export const GroupList = () => {
   const [search, setSearch] = useState("");
   const debouncedSearch = useDebounce(search, 800);
-  const { groups, selectedGroup, setSelectedGroup, isLoading, error, reset } =
-    useGroups(debouncedSearch);
+  const {
+    groups,
+    selectedGroup,
+    setSelectedGroup,
+    isGroupsLoading,
+    groupsError,
+    reset,
+  } = useGroups(debouncedSearch);
 
   const renderGroups = () => {
-    if (error) return <p className="text-center py-6">Ошибка: {error}</p>;
+    if (groupsError)
+      return <p className="text-center py-6">Ошибка: {groupsError.message}</p>;
     if (groups.length === 0)
       return <p className="text-center py-6">Ничего не найдено...</p>;
 
     return groups.map((g, i) => {
       if (i > 6) return null;
-      if (isLoading) return <Skeleton key={i} className="h-20" />;
+      if (isGroupsLoading) return <Skeleton key={i} className="h-20" />;
 
       return (
         <ListElem
@@ -33,9 +40,7 @@ export const GroupList = () => {
   };
 
   useEffect(() => {
-    return () => {
-      reset();
-    };
+    return () => reset();
   }, []);
 
   return (
