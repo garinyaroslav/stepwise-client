@@ -8,7 +8,7 @@ import {
   StudentForCreate,
   UserForCreate,
 } from "./reqTypes";
-import { GroupResponse, UserCreateResponse } from "./resTypes";
+import { GroupResponse, Pageiable, UserCreateResponse } from "./resTypes";
 import { UserWithProfile } from "@/types/UserWithProfile";
 
 export const loginReq = async (credentials: Credentials) => {
@@ -42,6 +42,25 @@ export const getStudentsByGroupId = async (
       throw new Error("Students fetch failed");
 
     return response.data;
+  } catch (error) {
+    throw error instanceof Error ? error : new Error("Network error");
+  }
+};
+
+export const getStudents = async (
+  search?: string,
+): Promise<UserWithProfile[]> => {
+  try {
+    const response = await axios.get<Pageiable<UserWithProfile>>(
+      "/user/student",
+      {
+        params: { search },
+      },
+    );
+    if (response.status !== HttpStatusCode.Ok)
+      throw new Error("Students fetch failed");
+
+    return response.data.data;
   } catch (error) {
     throw error instanceof Error ? error : new Error("Network error");
   }

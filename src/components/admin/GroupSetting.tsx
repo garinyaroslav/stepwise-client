@@ -2,13 +2,24 @@ import { useGroups } from "@/hooks/useGroups";
 import { Button } from "../ui/button";
 import { Input } from "../ui/input";
 import { UserWithProfile } from "@/types/UserWithProfile";
-import { FC, useEffect } from "react";
+import { FC, useEffect, useState } from "react";
 import { Skeleton } from "../ui/skeleton";
-import { CircleMinus } from "lucide-react";
+import { CircleMinus, CirclePlus } from "lucide-react";
+import { useStudents } from "@/hooks/useStudents";
+import { useDebounce } from "@/hooks/useDebounce";
 
 export const GroupSetting = () => {
   const { selectedGroup, students, studentsError, isStudentsLoading, reset } =
     useGroups();
+
+  const [studentSearch, setStudentSearch] = useState("");
+  const debouncedStudentSearch = useDebounce(studentSearch, 500);
+
+  const {
+    students: availableStudents,
+    isStudentsLoading: isAvailableStudentsLoading,
+    studentsError: availableStudentsError,
+  } = useStudents(debouncedStudentSearch);
 
   const renderStudents = () => {
     if (students.length === 0)
@@ -25,6 +36,25 @@ export const GroupSetting = () => {
       ));
 
     return students.map((s) => <StudentItem key={s.id} student={s} />);
+  };
+
+  const renderAvailableStudents = () => {
+    if (availableStudents.length === 0)
+      return <p className="text-center py-6">Студент не найден...</p>;
+    if (availableStudentsError)
+      return (
+        <p className="text-center py-6">
+          Произошла ошибка: {availableStudentsError.message}
+        </p>
+      );
+    if (isAvailableStudentsLoading)
+      return [...Array(4)].map(() => (
+        <Skeleton className="h-12 w-full rounded-lg" />
+      ));
+
+    return availableStudents.map((s) => (
+      <AvailableStudentItem key={s.id} student={s} />
+    ));
   };
 
   useEffect(() => {
@@ -54,42 +84,14 @@ export const GroupSetting = () => {
               Доступные студенты
             </h4>
             <div className="mb-4">
-              <Input placeholder="Поиск студентов..." />
+              <Input
+                placeholder="Поиск студентов..."
+                value={studentSearch}
+                onChange={(e) => setStudentSearch(e.target.value)}
+              />
             </div>
             <ul className="space-y-3 max-h-60 overflow-y-auto pr-2">
-              <li className="flex items-center justify-between p-3 hover:bg-gray-50 rounded-md">
-                <div>
-                  <p className="font-medium text-gray-900">John Doe</p>
-                  <p className="text-sm text-gray-500">S12345</p>
-                </div>
-                <button className="text-green-600 hover:text-green-800">
-                  <span className="material-symbols-outlined">
-                    add_circle_outline
-                  </span>
-                </button>
-              </li>
-              <li className="flex items-center justify-between p-3 hover:bg-gray-50 rounded-md">
-                <div>
-                  <p className="font-medium text-gray-900">Peter Jones</p>
-                  <p className="text-sm text-gray-500">S24680</p>
-                </div>
-                <button className="text-green-600 hover:text-green-800">
-                  <span className="material-symbols-outlined">
-                    add_circle_outline
-                  </span>
-                </button>
-              </li>
-              <li className="flex items-center justify-between p-3 hover:bg-gray-50 rounded-md">
-                <div>
-                  <p className="font-medium text-gray-900">Maria Garcia</p>
-                  <p className="text-sm text-gray-500">S13579</p>
-                </div>
-                <button className="text-green-600 hover:text-green-800">
-                  <span className="material-symbols-outlined">
-                    add_circle_outline
-                  </span>
-                </button>
-              </li>
+              {renderAvailableStudents()}
             </ul>
           </div>
           <div className="mt-6 flex justify-end">
@@ -119,6 +121,29 @@ const StudentItem: FC<StudentItemProps> = ({ student }) => {
       </div>
       <Button variant="ghost">
         <CircleMinus color="#ff6467" />
+      </Button>
+    </li>
+  );
+};
+
+interface AvailableStudentItemProps {
+  student: UserWithProfile;
+}
+
+const AvailableStudentItem: FC<AvailableStudentItemProps> = ({ student }) => {
+  const name =
+    student.firstName && student.lastName
+      ? student.firstName + " " + student.lastName
+      : student.username;
+
+  return (
+    <li className="flex items-center justify-between p-3 hover:bg-muted rounded-md">
+      <div>
+        <p className="font-medium text-foreground">{name}</p>
+        <p className="text-sm text-muted-foreground">S12345</p>
+      </div>
+      <Button variant="ghost">
+        <CirclePlus color="#4aa651" />
       </Button>
     </li>
   );

@@ -7,3 +7,8 @@ export interface GroupResponse {
 export interface UserCreateResponse {
   id: number;
 }
+
+export interface Pageiable<T> {
+  data: T[];
+  totalPages: number;
+}
