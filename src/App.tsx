@@ -12,6 +12,7 @@ import { UserManagement } from "./pages/admin/UserManagement";
 import { MainManagement } from "./pages/admin/MainManagement";
 import { GroupsManagement } from "./pages/admin/GroupsManagement";
 import { Toaster } from "./components/ui/sonner";
+import { ProjectManagement } from "./pages/admin/ProjectManagement";
 const Login = lazy(() => import("./pages/general/Login"));
 
 function AppContent() {
@@ -52,6 +53,7 @@ function AppContent() {
         <Route path="main" element={<MainManagement />} />
         <Route path="users" element={<UserManagement />} />
         <Route path="groups" element={<GroupsManagement />} />
+        <Route path="projects" element={<ProjectManagement />} />
       </Route>
       <Route
         path="/student/dashboard"

@@ -1,4 +1,4 @@
-import { LayoutDashboard, Users, UserPen } from "lucide-react";
+import { LayoutDashboard, Users, UserPen, ClipboardList } from "lucide-react";
 import {
   Sidebar,
   SidebarHeader,
@@ -26,6 +26,11 @@ const items = [
     title: "Группы",
     url: "groups",
     icon: Users,
+  },
+  {
+    title: "Проекты",
+    url: "projects",
+    icon: ClipboardList,
   },
 ];
 export const AppSidebar = () => {
