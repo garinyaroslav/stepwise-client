@@ -80,6 +80,61 @@ export const createGroup = async (
   }
 };
 
+export const addStudentToGroup = async (studentId: number, groupId: number) => {
+  try {
+    const groupRes = await axios.get<GroupResponse>(`/group/${groupId}`);
+
+    if (groupRes.status !== HttpStatusCode.Ok)
+      throw new Error("Group fetch failed");
+
+    const studentIds = groupRes.data.students.map((s) => s.id);
+
+    // if (studentIds.includes(studentId))
+    //   throw new Error("Student already in group");
+
+    studentIds.push(studentId);
+
+    const res = await axios.put("/group", {
+      id: groupRes.data.id,
+      studentIds: studentIds,
+    });
+
+    if (res.status !== HttpStatusCode.Ok)
+      throw new Error("Updating group with new student failed");
+  } catch (error) {
+    throw error instanceof Error ? error : new Error("Network error");
+  }
+};
+
+export const removeStudentFromGroup = async (
+  studentId: number,
+  groupId: number,
+) => {
+  try {
+    const groupRes = await axios.get<GroupResponse>(`/group/${groupId}`);
+
+    if (groupRes.status !== HttpStatusCode.Ok)
+      throw new Error("Group fetch failed");
+
+    const studentIds = groupRes.data.students.map((s) => s.id);
+
+    // if (!studentIds.includes(studentId))
+    //   throw new Error(`Student with id: ${groupId} not in the group`);
+
+    const filteredStudentids = studentIds.filter((id) => id !== studentId);
+
+    const res = await axios.put("/group", {
+      id: groupRes.data.id,
+      studentIds: filteredStudentids,
+    });
+
+    if (res.status !== HttpStatusCode.Ok)
+      throw new Error("Updating group id failed");
+  } catch (error) {
+    throw error instanceof Error ? error : new Error("Network error");
+  }
+};
+
 export const createUser = async (
   userObj: UserForCreate,
 ): Promise<AxiosResponse<UserCreateResponse>> => {

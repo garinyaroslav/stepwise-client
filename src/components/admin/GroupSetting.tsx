@@ -11,7 +11,6 @@ import { useDebounce } from "@/hooks/useDebounce";
 export const GroupSetting = () => {
   const { selectedGroup, students, studentsError, isStudentsLoading, reset } =
     useGroups();
-
   const [studentSearch, setStudentSearch] = useState("");
   const debouncedStudentSearch = useDebounce(studentSearch, 500);
 
@@ -22,8 +21,6 @@ export const GroupSetting = () => {
   } = useStudents(debouncedStudentSearch);
 
   const renderStudents = () => {
-    if (students.length === 0)
-      return <p className="text-center py-6">В этой группе нет студентов...</p>;
     if (studentsError)
       return (
         <p className="text-center py-6">
@@ -31,16 +28,24 @@ export const GroupSetting = () => {
         </p>
       );
     if (isStudentsLoading)
-      return [...Array(3)].map(() => (
-        <Skeleton className="h-12 w-full rounded-lg" />
+      return [...Array(3)].map((_, i) => (
+        <Skeleton key={i} className="h-12 w-full rounded-lg" />
       ));
+    if (students.length === 0 || selectedGroup == null)
+      return <p className="text-center py-6">В этой группе нет студентов...</p>;
 
-    return students.map((s) => <StudentItem key={s.id} student={s} />);
+    return students.map((s) => (
+      <StudentItem key={s.id} student={s} groupId={selectedGroup.id} />
+    ));
   };
 
   const renderAvailableStudents = () => {
-    if (availableStudents.length === 0)
-      return <p className="text-center py-6">Студент не найден...</p>;
+    if (studentSearch.length === 0 || selectedGroup == null)
+      return (
+        <p className="text-center py-6">
+          Введите имя или email студента для поиска.
+        </p>
+      );
     if (availableStudentsError)
       return (
         <p className="text-center py-6">
@@ -48,12 +53,14 @@ export const GroupSetting = () => {
         </p>
       );
     if (isAvailableStudentsLoading)
-      return [...Array(4)].map(() => (
-        <Skeleton className="h-12 w-full rounded-lg" />
+      return [...Array(4)].map((_, i) => (
+        <Skeleton key={i} className="h-12 w-full rounded-lg" />
       ));
+    if (availableStudents.length === 0)
+      return <p className="text-center py-6">Студент не найден...</p>;
 
     return availableStudents.map((s) => (
-      <AvailableStudentItem key={s.id} student={s} />
+      <AvailableStudentItem key={s.id} student={s} groupId={selectedGroup.id} />
     ));
   };
 
@@ -94,9 +101,6 @@ export const GroupSetting = () => {
               {renderAvailableStudents()}
             </ul>
           </div>
-          <div className="mt-6 flex justify-end">
-            <Button>Сохранить изменения</Button>
-          </div>
         </div>
       </div>
     </div>
@@ -105,9 +109,11 @@ export const GroupSetting = () => {
 
 interface StudentItemProps {
   student: UserWithProfile;
+  groupId: number;
 }
 
-const StudentItem: FC<StudentItemProps> = ({ student }) => {
+const StudentItem: FC<StudentItemProps> = ({ student, groupId }) => {
+  const { removeStudentFromGroup } = useGroups();
   const name =
     student.firstName && student.lastName
       ? student.firstName + " " + student.lastName
@@ -119,7 +125,12 @@ const StudentItem: FC<StudentItemProps> = ({ student }) => {
         <p className="font-medium text-foreground">{name}</p>
         <p className="text-sm text-muted-foreground">{student.email}</p>
       </div>
-      <Button variant="ghost">
+      <Button
+        variant="ghost"
+        onClick={() =>
+          removeStudentFromGroup({ studentId: student.id, groupId })
+        }
+      >
         <CircleMinus color="#ff6467" />
       </Button>
     </li>
@@ -128,9 +139,14 @@ const StudentItem: FC<StudentItemProps> = ({ student }) => {
 
 interface AvailableStudentItemProps {
   student: UserWithProfile;
+  groupId: number;
 }
 
-const AvailableStudentItem: FC<AvailableStudentItemProps> = ({ student }) => {
+const AvailableStudentItem: FC<AvailableStudentItemProps> = ({
+  student,
+  groupId,
+}) => {
+  const { addStudentToGroup } = useGroups();
   const name =
     student.firstName && student.lastName
       ? student.firstName + " " + student.lastName
@@ -142,7 +158,10 @@ const AvailableStudentItem: FC<AvailableStudentItemProps> = ({ student }) => {
         <p className="font-medium text-foreground">{name}</p>
         <p className="text-sm text-muted-foreground">S12345</p>
       </div>
-      <Button variant="ghost">
+      <Button
+        variant="ghost"
+        onClick={() => addStudentToGroup({ studentId: student.id, groupId })}
+      >
         <CirclePlus color="#4aa651" />
       </Button>
     </li>
