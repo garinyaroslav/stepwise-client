@@ -37,7 +37,8 @@ export const UsersAddForm = () => {
   const [popoverOpen, setPopoverOpen] = useState(false);
   const [search, setSearch] = useState("");
   const debouncedSearch = useDebounce(search, 500);
-  const { groups, isLoading, error, reset } = useGroups(debouncedSearch);
+  const { groups, isGroupsLoading, groupsError, reset } =
+    useGroups(debouncedSearch);
 
   const form = useForm<z.infer<typeof studentRegister>>({
     resolver: zodResolver(studentRegister),
@@ -161,9 +162,9 @@ export const UsersAddForm = () => {
                           variant="outline"
                           role="combobox"
                           className="w-full justify-between"
-                          disabled={isLoading}
+                          disabled={isGroupsLoading}
                         >
-                          {isLoading
+                          {isGroupsLoading
                             ? "Загрузка групп..."
                             : field.value
                               ? groups.find(
@@ -182,15 +183,17 @@ export const UsersAddForm = () => {
                           placeholder="Поиск группы..."
                         />
                         <CommandList>
-                          {error && (
+                          {groupsError && (
                             <CommandEmpty>
-                              Ошибка загрузки групп: {error}
+                              Ошибка загрузки групп: {groupsError.message}
                             </CommandEmpty>
                           )}
-                          {!error && groups.length === 0 && !isLoading && (
-                            <CommandEmpty>Группы не найдены.</CommandEmpty>
-                          )}
-                          {!error &&
+                          {!groupsError &&
+                            groups.length === 0 &&
+                            !isGroupsLoading && (
+                              <CommandEmpty>Группы не найдены.</CommandEmpty>
+                            )}
+                          {!groupsError &&
                             debouncedSearch.trim().length > 0 &&
                             groups.length > 0 && (
                               <CommandGroup>
@@ -229,7 +232,7 @@ export const UsersAddForm = () => {
             }}
           />
           <div className="flex justify-end pt-4">
-            <Button type="submit" disabled={isLoading}>
+            <Button type="submit" disabled={isGroupsLoading}>
               Зарегистрировать
             </Button>
           </div>
