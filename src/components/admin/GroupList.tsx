@@ -1,4 +1,4 @@
-import { FC, useEffect, useState } from "react";
+import { FC, useState } from "react";
 import { ChevronRight } from "lucide-react";
 import { Input } from "../ui/input";
 import { useDebounce } from "@/hooks/useDebounce";
@@ -14,7 +14,6 @@ export const GroupList = () => {
     setSelectedGroup,
     isGroupsLoading,
     groupsError,
-    reset,
   } = useGroups(debouncedSearch);
 
   const renderGroups = () => {
@@ -38,10 +37,6 @@ export const GroupList = () => {
       );
     });
   };
-
-  useEffect(() => {
-    return () => reset();
-  }, []);
 
   return (
     <div className="lg:col-span-1">

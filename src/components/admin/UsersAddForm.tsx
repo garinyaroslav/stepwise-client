@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
@@ -37,8 +37,7 @@ export const UsersAddForm = () => {
   const [popoverOpen, setPopoverOpen] = useState(false);
   const [search, setSearch] = useState("");
   const debouncedSearch = useDebounce(search, 500);
-  const { groups, isGroupsLoading, groupsError, reset } =
-    useGroups(debouncedSearch);
+  const { groups, isGroupsLoading, groupsError } = useGroups(debouncedSearch);
 
   const form = useForm<z.infer<typeof studentRegister>>({
     resolver: zodResolver(studentRegister),
@@ -78,12 +77,6 @@ export const UsersAddForm = () => {
       toast.error("Не удалось сгенерировать подходящий пароль");
     }
   };
-
-  useEffect(() => {
-    return () => {
-      reset();
-    };
-  }, []);
 
   return (
     <div className="bg-background border-2 p-8 rounded-lg">

@@ -10,6 +10,7 @@ import {
 } from "./reqTypes";
 import { GroupResponse, Pageiable, UserCreateResponse } from "./resTypes";
 import { UserWithProfile } from "@/types/UserWithProfile";
+import { AcademicProject } from "@/types/AcademicProject";
 
 export const loginReq = async (credentials: Credentials) => {
   const response = await axios.post("/auth/signin", credentials);
@@ -89,9 +90,6 @@ export const addStudentToGroup = async (studentId: number, groupId: number) => {
 
     const studentIds = groupRes.data.students.map((s) => s.id);
 
-    // if (studentIds.includes(studentId))
-    //   throw new Error("Student already in group");
-
     studentIds.push(studentId);
 
     const res = await axios.put("/group", {
@@ -117,9 +115,6 @@ export const removeStudentFromGroup = async (
       throw new Error("Group fetch failed");
 
     const studentIds = groupRes.data.students.map((s) => s.id);
-
-    // if (!studentIds.includes(studentId))
-    //   throw new Error(`Student with id: ${groupId} not in the group`);
 
     const filteredStudentids = studentIds.filter((id) => id !== studentId);
 
@@ -181,6 +176,22 @@ export const createStudent = async (
 
     if (res.status !== HttpStatusCode.Ok)
       throw new Error("Updating group with new student failed");
+  } catch (error) {
+    throw error instanceof Error ? error : new Error("Network error");
+  }
+};
+
+export const getAcademicProjectsByGroupId = async (
+  groupId?: number,
+): Promise<AcademicProject[]> => {
+  try {
+    const response = await axios.get<AcademicProject[]>(
+      `/work/group/${groupId}`,
+    );
+    if (response.status !== HttpStatusCode.Ok)
+      throw new Error("Academic projects fetch failed");
+
+    return response.data;
   } catch (error) {
     throw error instanceof Error ? error : new Error("Network error");
   }

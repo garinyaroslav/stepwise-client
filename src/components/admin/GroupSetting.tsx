@@ -2,14 +2,14 @@ import { useGroups } from "@/hooks/useGroups";
 import { Button } from "../ui/button";
 import { Input } from "../ui/input";
 import { UserWithProfile } from "@/types/UserWithProfile";
-import { FC, useEffect, useState } from "react";
+import { FC, useState } from "react";
 import { Skeleton } from "../ui/skeleton";
 import { CircleMinus, CirclePlus } from "lucide-react";
 import { useStudents } from "@/hooks/useStudents";
 import { useDebounce } from "@/hooks/useDebounce";
 
 export const GroupSetting = () => {
-  const { selectedGroup, students, studentsError, isStudentsLoading, reset } =
+  const { selectedGroup, students, studentsError, isStudentsLoading } =
     useGroups();
   const [studentSearch, setStudentSearch] = useState("");
   const debouncedStudentSearch = useDebounce(studentSearch, 500);
@@ -63,10 +63,6 @@ export const GroupSetting = () => {
       <AvailableStudentItem key={s.id} student={s} groupId={selectedGroup.id} />
     ));
   };
-
-  useEffect(() => {
-    return () => reset();
-  }, []);
 
   return (
     <div className="lg:col-span-2">
