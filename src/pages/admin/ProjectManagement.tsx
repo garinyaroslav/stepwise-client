@@ -32,23 +32,55 @@ import {
   EmptyHeader,
   EmptyTitle,
 } from "@/components/ui/empty";
+import { useAcademicProjects } from "@/hooks/useAcademicProjects";
+import { ProjectType } from "@/types/ProjectType";
+import { useNavigate } from "react-router";
 
 export const ProjectManagement = () => {
+  const navigate = useNavigate();
   const [popoverOpen, setPopoverOpen] = useState(false);
   const [search, setSearch] = useState("");
   const debouncedSearch = useDebounce(search, 500);
   const { groups, isGroupsLoading, groupsError } = useGroups(debouncedSearch);
   const [selectedGroupId, setSelectedGroupId] = useState<string | null>(null);
+  const { academicProjects, academicProjectsLoading, academicProjectsError } =
+    useAcademicProjects(selectedGroupId ? Number(selectedGroupId) : null);
 
   const renderTableData = () => {
-    return (
-      <TableRow key={0}>
-        <TableCell className="font-medium">123</TableCell>
-        <TableCell>123</TableCell>
-        <TableCell>123</TableCell>
-        <TableCell>123</TableCell>
-      </TableRow>
-    );
+    if (academicProjectsError)
+      return (
+        <TableRow>
+          <TableCell>
+            Произошла ошибка: {academicProjectsError.message}
+          </TableCell>
+        </TableRow>
+      );
+    if (academicProjectsLoading)
+      return (
+        <TableRow>
+          <TableCell>Загрузка...</TableCell>
+        </TableRow>
+      );
+
+    return academicProjects.map((p) => {
+      const type =
+        p.type === ProjectType.thesis ? "Дипломная работа" : "Курсовая работа";
+      const teacherName = p.teacherName || null;
+      const teacherLastName = p.teacherLastName || null;
+
+      return (
+        <TableRow
+          onClick={() => console.log("redirect on ditails")}
+          key={p.id}
+          className="cursor-pointer"
+        >
+          <TableCell className="font-medium">{p.title}</TableCell>
+          <TableCell>{type}</TableCell>
+          <TableCell>{`${teacherName} ${teacherLastName}`}</TableCell>
+          <TableCell>{p.teacherEmail}</TableCell>
+        </TableRow>
+      );
+    });
   };
 
   return (
@@ -65,7 +97,7 @@ export const ProjectManagement = () => {
                 Просмотр и управление заданиями для студенческих групп.
               </p>
             </div>
-            <Button>+ Новый проект</Button>
+            <Button onClick={() => navigate("add")}>+ Новый проект</Button>
           </div>
           <div className="bg-background p-6 rounded-xl border-2">
             <div className="flex justify-between items-center mb-6">
@@ -154,23 +186,7 @@ export const ProjectManagement = () => {
                       <TableHead>Email проверяющего</TableHead>
                     </TableRow>
                   </TableHeader>
-                  {/* {selectedGroupId != null ? ( */}
                   <TableBody>{renderTableData()}</TableBody>
-                  {/* ) : ( */}
-                  {/* <Empty> */}
-                  {/*   <EmptyHeader> */}
-                  {/*     <EmptyMedia variant="icon">123</EmptyMedia> */}
-                  {/*     <EmptyTitle>Проектов пока нет</EmptyTitle> */}
-                  {/*     <EmptyDescription> */}
-                  {/*       Для этой группы ещё не создали ни одного проекта. */}
-                  {/*       Начните с создания первого проекта. */}
-                  {/*     </EmptyDescription> */}
-                  {/*   </EmptyHeader> */}
-                  {/*   <EmptyContent> */}
-                  {/*     <Button>Создать проект</Button> */}
-                  {/*   </EmptyContent> */}
-                  {/* </Empty> */}
-                  {/* )} */}
                 </Table>
               ) : (
                 <Empty>
