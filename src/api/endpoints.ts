@@ -67,6 +67,25 @@ export const getStudents = async (
   }
 };
 
+export const getTeachers = async (
+  search?: string,
+): Promise<UserWithProfile[]> => {
+  try {
+    const response = await axios.get<Pageiable<UserWithProfile>>(
+      "/user/teacher",
+      {
+        params: { search },
+      },
+    );
+    if (response.status !== HttpStatusCode.Ok)
+      throw new Error("Teachers fetch failed");
+
+    return response.data.data;
+  } catch (error) {
+    throw error instanceof Error ? error : new Error("Network error");
+  }
+};
+
 export const createGroup = async (
   groupObj: GroupCreate,
 ): Promise<AxiosResponse<void>> => {

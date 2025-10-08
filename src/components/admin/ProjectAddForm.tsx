@@ -1,5 +1,5 @@
 import z from "zod";
-import { Save } from "lucide-react";
+import { CheckIcon, ChevronsUpDownIcon, Save } from "lucide-react";
 import { Button } from "../ui/button";
 import {
   Form,
@@ -16,13 +16,36 @@ import { createAcademicProject } from "@/schemes/createAcademicProject";
 import { Textarea } from "../ui/textarea";
 import { toast } from "sonner";
 import { ProjectSectionItem } from "./ProjectSectionItem";
+import { useDebounce } from "@/hooks/useDebounce";
+import { useGroups } from "@/hooks/useGroups";
+import { useState } from "react";
+import { Popover, PopoverContent, PopoverTrigger } from "../ui/popover";
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "../ui/command";
+import { cn } from "@/lib/utils";
+import { useTeachers } from "@/hooks/useTeachers";
 
 export const ProjectAddForm = () => {
+  const [popoverOpen, setPopoverOpen] = useState(false);
+  const [search, setSearch] = useState("");
+  const debouncedSearch = useDebounce(search, 500);
+  const { groups, isGroupsLoading, groupsError } = useGroups(debouncedSearch);
+  const { teachers, isTeachersLoading, teachersError } =
+    useTeachers(debouncedSearch);
+
   const form = useForm<z.infer<typeof createAcademicProject>>({
     resolver: zodResolver(createAcademicProject),
     defaultValues: {
       title: "",
       description: "",
+      groupId: "",
+      teacherId: "",
     },
   });
 
@@ -121,26 +144,189 @@ export const ProjectAddForm = () => {
                     Назначить учителя
                   </label>
 
-                  <select className="form-input mt-1" id="select-teacher">
-                    <option>Select a reviewer</option>
-                    <option>Dr. Katherine Johnson</option>
-                    <option>Dr. Richard Feynman</option>
-                    <option>Dr. Marie Curie</option>
-                    <option>Dr. Albert Einstein</option>
-                  </select>
+                  <FormField
+                    control={form.control}
+                    name="teacherId"
+                    render={({ field }) => {
+                      return (
+                        <FormItem>
+                          <Popover
+                            open={popoverOpen}
+                            onOpenChange={setPopoverOpen}
+                          >
+                            <PopoverTrigger asChild>
+                              <FormControl>
+                                <Button
+                                  variant="outline"
+                                  role="combobox"
+                                  className="w-full justify-between"
+                                  disabled={isGroupsLoading}
+                                >
+                                  {isGroupsLoading
+                                    ? "Загрузка преподавателей..."
+                                    : field.value
+                                      ? groups.find(
+                                        (group) =>
+                                          String(group.id) === field.value,
+                                      )?.name
+                                      : "Выберите преподавателя..."}
+                                  <ChevronsUpDownIcon className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                                </Button>
+                              </FormControl>
+                            </PopoverTrigger>
+                            <PopoverContent className="w-[var(--radix-popover-trigger-width)] min-w-full p-0">
+                              <Command>
+                                <CommandInput
+                                  value={search}
+                                  onValueChange={setSearch}
+                                  placeholder="Поиск преподавателя..."
+                                />
+                                <CommandList>
+                                  {groupsError && (
+                                    <CommandEmpty>
+                                      Ошибка загрузки преподавателя:{" "}
+                                      {groupsError.message}
+                                    </CommandEmpty>
+                                  )}
+                                  {!groupsError &&
+                                    groups.length === 0 &&
+                                    !isGroupsLoading && (
+                                      <CommandEmpty>
+                                        Преподаватели не найдены.
+                                      </CommandEmpty>
+                                    )}
+                                  {!groupsError &&
+                                    debouncedSearch.trim().length > 0 &&
+                                    groups.length > 0 && (
+                                      <CommandGroup>
+                                        {groups.map((group) => (
+                                          <CommandItem
+                                            key={group.id}
+                                            value={group.name}
+                                            onSelect={() => {
+                                              form.setValue(
+                                                "teacherId",
+                                                String(group.id),
+                                              );
+                                              setPopoverOpen(false);
+                                            }}
+                                          >
+                                            <CheckIcon
+                                              className={cn(
+                                                "mr-2 h-4 w-4",
+                                                field.value === String(group.id)
+                                                  ? "opacity-100"
+                                                  : "opacity-0",
+                                              )}
+                                            />
+                                            {group.name}
+                                          </CommandItem>
+                                        ))}
+                                      </CommandGroup>
+                                    )}
+                                </CommandList>
+                              </Command>
+                            </PopoverContent>
+                          </Popover>
+                          <FormMessage />
+                        </FormItem>
+                      );
+                    }}
+                  />
                 </div>
               </div>
               <div className="bg-background p-6 rounded-xl border-2">
                 <h2 className="text-lg font-semibold text-foreground mb-4">
                   Назначить группу
                 </h2>
-                <select className="form-input mt-1" id="select-teacher">
-                  <option>Select a reviewer</option>
-                  <option>Dr. Katherine Johnson</option>
-                  <option>Dr. Richard Feynman</option>
-                  <option>Dr. Marie Curie</option>
-                  <option>Dr. Albert Einstein</option>
-                </select>
+                <FormField
+                  control={form.control}
+                  name="groupId"
+                  render={({ field }) => {
+                    return (
+                      <FormItem>
+                        <Popover
+                          open={popoverOpen}
+                          onOpenChange={setPopoverOpen}
+                        >
+                          <PopoverTrigger asChild>
+                            <FormControl>
+                              <Button
+                                variant="outline"
+                                role="combobox"
+                                className="w-full justify-between"
+                                disabled={isGroupsLoading}
+                              >
+                                {isGroupsLoading
+                                  ? "Загрузка групп..."
+                                  : field.value
+                                    ? groups.find(
+                                      (group) =>
+                                        String(group.id) === field.value,
+                                    )?.name
+                                    : "Выберите группу..."}
+                                <ChevronsUpDownIcon className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                              </Button>
+                            </FormControl>
+                          </PopoverTrigger>
+                          <PopoverContent className="w-[var(--radix-popover-trigger-width)] min-w-full p-0">
+                            <Command>
+                              <CommandInput
+                                value={search}
+                                onValueChange={setSearch}
+                                placeholder="Поиск группы..."
+                              />
+                              <CommandList>
+                                {groupsError && (
+                                  <CommandEmpty>
+                                    Ошибка загрузки групп: {groupsError.message}
+                                  </CommandEmpty>
+                                )}
+                                {!groupsError &&
+                                  groups.length === 0 &&
+                                  !isGroupsLoading && (
+                                    <CommandEmpty>
+                                      Группы не найдены.
+                                    </CommandEmpty>
+                                  )}
+                                {!groupsError &&
+                                  debouncedSearch.trim().length > 0 &&
+                                  groups.length > 0 && (
+                                    <CommandGroup>
+                                      {groups.map((group) => (
+                                        <CommandItem
+                                          key={group.id}
+                                          value={group.name}
+                                          onSelect={() => {
+                                            form.setValue(
+                                              "groupId",
+                                              String(group.id),
+                                            );
+                                            setPopoverOpen(false);
+                                          }}
+                                        >
+                                          <CheckIcon
+                                            className={cn(
+                                              "mr-2 h-4 w-4",
+                                              field.value === String(group.id)
+                                                ? "opacity-100"
+                                                : "opacity-0",
+                                            )}
+                                          />
+                                          {group.name}
+                                        </CommandItem>
+                                      ))}
+                                    </CommandGroup>
+                                  )}
+                              </CommandList>
+                            </Command>
+                          </PopoverContent>
+                        </Popover>
+                        <FormMessage />
+                      </FormItem>
+                    );
+                  }}
+                />
               </div>
               <div className="pt-4 lg:sticky lg:top-8">
                 <Button size="lg" className="w-full" type="submit">

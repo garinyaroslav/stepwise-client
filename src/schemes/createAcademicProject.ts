@@ -6,4 +6,6 @@ export const createAcademicProject = z.object({
     .string()
     .min(2, "Слишком короткое")
     .max(500, "Слишком длинное"),
+  groupId: z.string({ error: "Выберите группу" }),
+  teacherId: z.string({ error: "Выберите преподавателя" }),
 });
