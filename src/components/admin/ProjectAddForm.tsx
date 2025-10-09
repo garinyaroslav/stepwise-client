@@ -1,5 +1,5 @@
 import z from "zod";
-import { CheckIcon, ChevronsUpDownIcon, Save } from "lucide-react";
+import { CheckIcon, ChevronsUpDownIcon, Plus, Save } from "lucide-react";
 import { Button } from "../ui/button";
 import {
   Form,
@@ -10,12 +10,11 @@ import {
   FormMessage,
 } from "../ui/form";
 import { Input } from "../ui/input";
-import { useForm } from "react-hook-form";
+import { useFieldArray, useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { createAcademicProject } from "@/schemes/createAcademicProject";
 import { Textarea } from "../ui/textarea";
 import { toast } from "sonner";
-import { ProjectSectionItem } from "./ProjectSectionItem";
 import { useDebounce } from "@/hooks/useDebounce";
 import { useGroups } from "@/hooks/useGroups";
 import { useState } from "react";
@@ -30,14 +29,20 @@ import {
 } from "../ui/command";
 import { cn } from "@/lib/utils";
 import { useTeachers } from "@/hooks/useTeachers";
+import { ProjectSectionsList } from "./ProjectSectionList";
 
 export const ProjectAddForm = () => {
-  const [popoverOpen, setPopoverOpen] = useState(false);
-  const [search, setSearch] = useState("");
-  const debouncedSearch = useDebounce(search, 500);
-  const { groups, isGroupsLoading, groupsError } = useGroups(debouncedSearch);
-  const { teachers, isTeachersLoading, teachersError } =
-    useTeachers(debouncedSearch);
+  const [groupsPopoverOpen, setGroupsPopoverOpen] = useState(false);
+  const [teachersPopoverOpen, setTeachersPopoverOpen] = useState(false);
+  const [groupSearch, setGroupSearch] = useState("");
+  const [teachersSearch, setTeachersSearch] = useState("");
+  const groupDebouncedSearch = useDebounce(groupSearch, 500);
+  const teacherDebouncedSearch = useDebounce(teachersSearch, 500);
+  const { groups, isGroupsLoading, groupsError } =
+    useGroups(groupDebouncedSearch);
+  const { teachers, isTeachresLoading, teachersError } = useTeachers(
+    teacherDebouncedSearch,
+  );
 
   const form = useForm<z.infer<typeof createAcademicProject>>({
     resolver: zodResolver(createAcademicProject),
@@ -46,23 +51,53 @@ export const ProjectAddForm = () => {
       description: "",
       groupId: "",
       teacherId: "",
+      chapters: [
+        {
+          index: 0,
+          title: "",
+          description: "",
+          deadline: new Date(),
+        },
+      ],
     },
   });
 
+  const { fields, append, remove, move } = useFieldArray({
+    control: form.control,
+    name: "chapters",
+  });
+
+  const addSection = () => {
+    append({
+      index: fields.length,
+      title: "",
+      description: "",
+      deadline: new Date(),
+    });
+  };
+
+  const removeSection = (index: number) => {
+    remove(index);
+  };
+
+  const moveSection = (fromIndex: number, toIndex: number) => {
+    move(fromIndex, toIndex);
+  };
+
   const onSubmit = async (data: z.infer<typeof createAcademicProject>) => {
     try {
-      console.log("Student created:", data);
-      toast.success("Студент успешно создан.");
+      console.log("Project created:", data);
+      toast.success("Проект успешно создан.");
       form.reset();
     } catch (error) {
-      console.error("Error creating student:", error);
-      toast.success("Произошла ошибка при создании студента.");
+      console.error("Error creating project:", error);
+      toast.error("Произошла ошибка при создании проекта.");
     }
   };
 
   return (
     <div className="flex min-h-screen">
-      <div className="mx-auto">
+      <div className="w-full px-16">
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-foreground">
             Cоздание новой пояснительной записки
@@ -72,7 +107,6 @@ export const ProjectAddForm = () => {
             записки.
           </p>
         </div>
-
         <Form {...form}>
           <form
             onSubmit={form.handleSubmit(onSubmit)}
@@ -126,12 +160,28 @@ export const ProjectAddForm = () => {
                   Определите отдельные части пояснительной записки. Перетащите,
                   чтобы изменить порядок.
                 </p>
-                <div className="space-y-3" id="sections-container">
-                  <ProjectSectionItem />
-                </div>
-                <Button type="button" variant="outline" className="mt-4">
-                  + Добавить пункт
+
+                <ProjectSectionsList
+                  fields={fields}
+                  form={form}
+                  onRemove={removeSection}
+                  onMove={moveSection}
+                />
+
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="mt-4"
+                  onClick={addSection}
+                >
+                  <Plus className="w-4 h-4 mr-2" />
+                  Добавить пункт
                 </Button>
+                {form.formState.errors.chapters && (
+                  <p className="text-sm font-medium text-destructive mt-2">
+                    {form.formState.errors.chapters.message}
+                  </p>
+                )}
               </div>
             </div>
             <div className="lg:col-span-1 space-y-6">
@@ -139,102 +189,94 @@ export const ProjectAddForm = () => {
                 <h2 className="text-lg font-semibold text-foreground mb-4">
                   Рецензент
                 </h2>
-                <div>
-                  <label className="block text-sm font-medium text-muted-foreground">
-                    Назначить учителя
-                  </label>
-
-                  <FormField
-                    control={form.control}
-                    name="teacherId"
-                    render={({ field }) => {
-                      return (
-                        <FormItem>
-                          <Popover
-                            open={popoverOpen}
-                            onOpenChange={setPopoverOpen}
-                          >
-                            <PopoverTrigger asChild>
-                              <FormControl>
-                                <Button
-                                  variant="outline"
-                                  role="combobox"
-                                  className="w-full justify-between"
-                                  disabled={isGroupsLoading}
-                                >
-                                  {isGroupsLoading
-                                    ? "Загрузка преподавателей..."
-                                    : field.value
-                                      ? groups.find(
-                                        (group) =>
-                                          String(group.id) === field.value,
-                                      )?.name
-                                      : "Выберите преподавателя..."}
-                                  <ChevronsUpDownIcon className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                                </Button>
-                              </FormControl>
-                            </PopoverTrigger>
-                            <PopoverContent className="w-[var(--radix-popover-trigger-width)] min-w-full p-0">
-                              <Command>
-                                <CommandInput
-                                  value={search}
-                                  onValueChange={setSearch}
-                                  placeholder="Поиск преподавателя..."
-                                />
-                                <CommandList>
-                                  {groupsError && (
-                                    <CommandEmpty>
-                                      Ошибка загрузки преподавателя:{" "}
-                                      {groupsError.message}
-                                    </CommandEmpty>
+                <FormField
+                  control={form.control}
+                  name="teacherId"
+                  render={({ field }) => {
+                    return (
+                      <FormItem>
+                        <Popover
+                          open={teachersPopoverOpen}
+                          onOpenChange={setTeachersPopoverOpen}
+                        >
+                          <PopoverTrigger asChild>
+                            <FormControl>
+                              <Button
+                                variant="outline"
+                                role="combobox"
+                                className="w-full justify-between"
+                                disabled={isTeachresLoading}
+                              >
+                                {isTeachresLoading
+                                  ? "Загрузка учителей..."
+                                  : field.value
+                                    ? teachers.find(
+                                      (t) => String(t.id) === field.value,
+                                    )?.username
+                                    : "Выберите учителя..."}
+                                <ChevronsUpDownIcon className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                              </Button>
+                            </FormControl>
+                          </PopoverTrigger>
+                          <PopoverContent className="w-[var(--radix-popover-trigger-width)] min-w-full p-0">
+                            <Command shouldFilter={false}>
+                              <CommandInput
+                                value={teachersSearch}
+                                onValueChange={setTeachersSearch}
+                                placeholder="Поиск учителя..."
+                              />
+                              <CommandList>
+                                {teachersError && (
+                                  <CommandEmpty>
+                                    Ошибка загрузки учителей:{" "}
+                                    {teachersError.message}
+                                  </CommandEmpty>
+                                )}
+                                {!teachersError && teachers.length === 0 && (
+                                  <CommandEmpty>
+                                    Учителя не найдены.
+                                  </CommandEmpty>
+                                )}
+                                {!teachersError &&
+                                  teachers.length > 0 &&
+                                  teacherDebouncedSearch.trim().length > 0 && (
+                                    <CommandGroup>
+                                      {teachers.map((t) => (
+                                        <CommandItem
+                                          key={t.id}
+                                          value={String(t.id)}
+                                          onSelect={() => {
+                                            form.setValue(
+                                              "teacherId",
+                                              String(t.id),
+                                            );
+                                            setTeachersPopoverOpen(false);
+                                          }}
+                                        >
+                                          <CheckIcon
+                                            className={cn(
+                                              "mr-2 h-4 w-4",
+                                              field.value === String(t.id)
+                                                ? "opacity-100"
+                                                : "opacity-0",
+                                            )}
+                                          />
+                                          {`@${t.username} (${t.firstName || ""} ${t.lastName || ""})`.trim()}
+                                        </CommandItem>
+                                      ))}
+                                    </CommandGroup>
                                   )}
-                                  {!groupsError &&
-                                    groups.length === 0 &&
-                                    !isGroupsLoading && (
-                                      <CommandEmpty>
-                                        Преподаватели не найдены.
-                                      </CommandEmpty>
-                                    )}
-                                  {!groupsError &&
-                                    debouncedSearch.trim().length > 0 &&
-                                    groups.length > 0 && (
-                                      <CommandGroup>
-                                        {groups.map((group) => (
-                                          <CommandItem
-                                            key={group.id}
-                                            value={group.name}
-                                            onSelect={() => {
-                                              form.setValue(
-                                                "teacherId",
-                                                String(group.id),
-                                              );
-                                              setPopoverOpen(false);
-                                            }}
-                                          >
-                                            <CheckIcon
-                                              className={cn(
-                                                "mr-2 h-4 w-4",
-                                                field.value === String(group.id)
-                                                  ? "opacity-100"
-                                                  : "opacity-0",
-                                              )}
-                                            />
-                                            {group.name}
-                                          </CommandItem>
-                                        ))}
-                                      </CommandGroup>
-                                    )}
-                                </CommandList>
-                              </Command>
-                            </PopoverContent>
-                          </Popover>
-                          <FormMessage />
-                        </FormItem>
-                      );
-                    }}
-                  />
-                </div>
+                              </CommandList>
+                            </Command>
+                          </PopoverContent>
+                        </Popover>
+                        <FormMessage />
+                      </FormItem>
+                    );
+                  }}
+                />
               </div>
+
               <div className="bg-background p-6 rounded-xl border-2">
                 <h2 className="text-lg font-semibold text-foreground mb-4">
                   Назначить группу
@@ -246,8 +288,8 @@ export const ProjectAddForm = () => {
                     return (
                       <FormItem>
                         <Popover
-                          open={popoverOpen}
-                          onOpenChange={setPopoverOpen}
+                          open={groupsPopoverOpen}
+                          onOpenChange={setGroupsPopoverOpen}
                         >
                           <PopoverTrigger asChild>
                             <FormControl>
@@ -272,8 +314,8 @@ export const ProjectAddForm = () => {
                           <PopoverContent className="w-[var(--radix-popover-trigger-width)] min-w-full p-0">
                             <Command>
                               <CommandInput
-                                value={search}
-                                onValueChange={setSearch}
+                                value={groupSearch}
+                                onValueChange={setGroupSearch}
                                 placeholder="Поиск группы..."
                               />
                               <CommandList>
@@ -290,7 +332,7 @@ export const ProjectAddForm = () => {
                                     </CommandEmpty>
                                   )}
                                 {!groupsError &&
-                                  debouncedSearch.trim().length > 0 &&
+                                  groupDebouncedSearch.trim().length > 0 &&
                                   groups.length > 0 && (
                                     <CommandGroup>
                                       {groups.map((group) => (
@@ -302,7 +344,7 @@ export const ProjectAddForm = () => {
                                               "groupId",
                                               String(group.id),
                                             );
-                                            setPopoverOpen(false);
+                                            setGroupsPopoverOpen(false);
                                           }}
                                         >
                                           <CheckIcon
