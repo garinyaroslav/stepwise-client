@@ -1,27 +1,38 @@
 import { UserRole } from "@/types/auth/UserRole";
+import { ProjectChapter } from "@/types/ProjectChapter";
+import { ProjectType } from "@/types/ProjectType";
 
 export interface Credentials {
-  password: string;
+    password: string;
 }
 
 export interface Group {
-  id: number;
-  name: string;
-  studentsCount: number;
+    id: number;
+    name: string;
+    studentsCount: number;
 }
 
 export interface UserForCreate {
-  username: string;
-  email: string;
-  password: string;
-  role: UserRole;
+    username: string;
+    email: string;
+    password: string;
+    role: UserRole;
 }
 
 export interface StudentForCreate extends UserForCreate {
-  groupId: number;
+    groupId: number;
 }
 
 export interface GroupCreate {
-  name: string;
-  studentIds: number[];
+    name: string;
+    studentIds: number[];
+}
+
+export interface CreateAcademicProject {
+    title: string;
+    description: string;
+    type: ProjectType;
+    groupId: string;
+    teacherId: string;
+    chapters: ProjectChapter[];
 }

@@ -1,5 +1,6 @@
 export interface ProjectChapter {
-  index: number;
-  title: string;
-  description: string;
+    index: number;
+    title: string;
+    description?: string;
+    deadline: Date;
 }
