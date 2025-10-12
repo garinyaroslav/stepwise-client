@@ -17,82 +17,83 @@ import { ProjectAddForm } from "./components/admin/ProjectAddForm";
 const Login = lazy(() => import("./pages/general/Login"));
 
 function AppContent() {
-  const { isAuthenticated, user } = useAuthStore();
+    const { isAuthenticated, user } = useAuthStore();
 
-  // TODO: on load, check the token validity via Query
-  // useEffect(() => {
-  //   if (token) {
-  //     queryClient.fetchQuery({ queryKey: ['user'], queryFn: validateToken });
-  //   }
-  // }, [token]);
+    // TODO: on load, check the token validity via Query
+    // useEffect(() => {
+    //   if (token) {
+    //     queryClient.fetchQuery({ queryKey: ['user'], queryFn: validateToken });
+    //   }
+    // }, [token]);
 
-  return (
-    <Routes>
-      <Route
-        path="/login"
-        element={!isAuthenticated ? <Login /> : <Navigate to="/dashboard" />}
-      />
-      <Route
-        path="/dashboard"
-        element={
-          isAuthenticated ? (
-            <Navigate to={`/${user?.role}/dashboard`} replace />
-          ) : (
-            <Navigate to="/login" />
-          )
-        }
-      />
+    return (
+        <Routes>
+            <Route
+                path="/login"
+                element={!isAuthenticated ? <Login /> : <Navigate to="/dashboard" />}
+            />
+            <Route
+                path="/dashboard"
+                element={
+                    isAuthenticated ? (
+                        <Navigate to={`/${user?.role}/dashboard`} replace />
+                    ) : (
+                        <Navigate to="/login" />
+                    )
+                }
+            />
 
-      <Route
-        path="/admin/dashboard"
-        element={
-          <ProtectedRoute allowedRoles={[UserRole.ADMIN]}>
-            <AdminDashboard />
-          </ProtectedRoute>
-        }
-      >
-        <Route path="main" element={<MainManagement />} />
-        <Route path="users" element={<UserManagement />} />
-        <Route path="groups" element={<GroupsManagement />} />
-        <Route path="projects">
-          <Route path="" element={<ProjectManagement />} />
-          <Route path="add" element={<ProjectAddForm />} />
-        </Route>
-      </Route>
-      <Route
-        path="/student/dashboard"
-        element={
-          <ProtectedRoute allowedRoles={[UserRole.STUDENT]}>
-            <div>student dashboard</div>
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/teacher/dashboard"
-        element={
-          <ProtectedRoute allowedRoles={[UserRole.TEACHER]}>
-            <div>teacher dashboard</div>
-          </ProtectedRoute>
-        }
-      />
+            <Route
+                path="/admin/dashboard"
+                element={
+                    <ProtectedRoute allowedRoles={[UserRole.ADMIN]}>
+                        <AdminDashboard />
+                    </ProtectedRoute>
+                }
+            >
+                <Route path="main" element={<MainManagement />} />
+                <Route path="users" element={<UserManagement />} />
+                <Route path="groups" element={<GroupsManagement />} />
+                <Route path="projects">
+                    <Route path="" element={<ProjectManagement />} />
+                    <Route path="add" element={<ProjectAddForm />} />
+                    <Route path=":projectId" element={<ProjectAddForm />} />
+                </Route>
+            </Route>
+            <Route
+                path="/student/dashboard"
+                element={
+                    <ProtectedRoute allowedRoles={[UserRole.STUDENT]}>
+                        <div>student dashboard</div>
+                    </ProtectedRoute>
+                }
+            />
+            <Route
+                path="/teacher/dashboard"
+                element={
+                    <ProtectedRoute allowedRoles={[UserRole.TEACHER]}>
+                        <div>teacher dashboard</div>
+                    </ProtectedRoute>
+                }
+            />
 
-      <Route path="/unauthorized" element={<Unauthorized />} />
-      <Route path="*" element={<Navigate to="/login" />} />
-    </Routes>
-  );
+            <Route path="/unauthorized" element={<Unauthorized />} />
+            <Route path="*" element={<Navigate to="/login" />} />
+        </Routes>
+    );
 }
 
 function App() {
-  return (
-    <QueryClientProvider client={queryClient}>
-      <Suspense fallback={<LoadingFallback />}>
-        <BrowserRouter>
-          <AppContent />
-          <Toaster />
-        </BrowserRouter>
-      </Suspense>
-    </QueryClientProvider>
-  );
+    return (
+        <QueryClientProvider client={queryClient}>
+            <Suspense fallback={<LoadingFallback />}>
+                <BrowserRouter>
+                    <AppContent />
+                    <Toaster />
+                </BrowserRouter>
+            </Suspense>
+        </QueryClientProvider>
+    );
 }
 
 export default App;

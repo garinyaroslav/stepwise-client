@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import {
     Command,
@@ -28,23 +28,36 @@ import {
 } from "@/components/ui/table";
 import {
     Empty,
-    EmptyDescription,
     EmptyHeader,
     EmptyTitle,
+    EmptyDescription,
 } from "@/components/ui/empty";
 import { useAcademicProjects } from "@/hooks/useAcademicProjects";
 import { ProjectType } from "@/types/ProjectType";
-import { useNavigate } from "react-router";
+import { useNavigate, useSearchParams } from "react-router";
 
 export const ProjectManagement = () => {
     const navigate = useNavigate();
+    const [searchParams, setSearchParams] = useSearchParams();
     const [popoverOpen, setPopoverOpen] = useState(false);
     const [search, setSearch] = useState("");
     const debouncedSearch = useDebounce(search, 500);
     const { groups, isGroupsLoading, groupsError } = useGroups(debouncedSearch);
-    const [selectedGroupId, setSelectedGroupId] = useState<string | null>(null);
+
+    const [selectedGroupId, setSelectedGroupId] = useState<string | null>(
+        searchParams.get("groupId")
+    );
+
     const { academicProjects, academicProjectsLoading, academicProjectsError } =
         useAcademicProjects(selectedGroupId ? Number(selectedGroupId) : null);
+
+    useEffect(() => {
+        if (selectedGroupId) {
+            setSearchParams({ groupId: selectedGroupId });
+        } else {
+            setSearchParams({});
+        }
+    }, [selectedGroupId, setSearchParams]);
 
     const renderTableData = () => {
         if (academicProjectsError)
@@ -70,7 +83,7 @@ export const ProjectManagement = () => {
 
             return (
                 <TableRow
-                    onClick={() => console.log("redirect on ditails")}
+                    onClick={() => navigate(`projects/${p.id}`)}
                     key={p.id}
                     className="cursor-pointer"
                 >
