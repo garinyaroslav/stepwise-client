@@ -49,7 +49,7 @@ export const ProjectManagement = () => {
     );
 
     const { academicProjects, academicProjectsLoading, academicProjectsError } =
-        useAcademicProjects(selectedGroupId ? Number(selectedGroupId) : null);
+        useAcademicProjects(selectedGroupId ? Number(selectedGroupId) : null, null);
 
     useEffect(() => {
         if (selectedGroupId) {
@@ -83,7 +83,7 @@ export const ProjectManagement = () => {
 
             return (
                 <TableRow
-                    onClick={() => navigate(`projects/${p.id}`)}
+                    onClick={() => navigate(`${p.id}`)}
                     key={p.id}
                     className="cursor-pointer"
                 >

@@ -47,7 +47,7 @@ export const ProjectAddForm = () => {
     const { teachers, isTeachresLoading, teachersError } = useTeachers(
         teacherDebouncedSearch,
     );
-    const { createAcademicProject: createAcademicProjectM } = useAcademicProjects(null);
+    const { createAcademicProject: createAcademicProjectM } = useAcademicProjects(null, null);
 
     const form = useForm<z.infer<typeof createAcademicProject>>({
         resolver: zodResolver(createAcademicProject),

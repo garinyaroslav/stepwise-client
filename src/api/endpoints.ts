@@ -217,6 +217,22 @@ export const getAcademicProjectsByGroupId = async (
     }
 };
 
+export const getAcademicProjectById = async (
+    projectId?: number,
+): Promise<AcademicProject> => {
+    try {
+        const response = await axios.get<AcademicProject>(
+            `/work/${projectId}`,
+        );
+        if (response.status !== HttpStatusCode.Ok)
+            throw new Error("Academic project fetch failed");
+
+        return response.data;
+    } catch (error) {
+        throw error instanceof Error ? error : new Error("Network error");
+    }
+};
+
 export const createAcademicProject = async (
     project: CreateAcademicProject
 ): Promise<void> => {

@@ -14,6 +14,7 @@ import { GroupsManagement } from "./pages/admin/GroupsManagement";
 import { Toaster } from "./components/ui/sonner";
 import { ProjectManagement } from "./pages/admin/ProjectManagement";
 import { ProjectAddForm } from "./components/admin/ProjectAddForm";
+import { ProjectDetailsForm } from "./components/admin/ProjectDitailsForm";
 const Login = lazy(() => import("./pages/general/Login"));
 
 function AppContent() {
@@ -57,7 +58,7 @@ function AppContent() {
                 <Route path="projects">
                     <Route path="" element={<ProjectManagement />} />
                     <Route path="add" element={<ProjectAddForm />} />
-                    <Route path=":projectId" element={<ProjectAddForm />} />
+                    <Route path=":projectId" element={<ProjectDetailsForm />} />
                 </Route>
             </Route>
             <Route
