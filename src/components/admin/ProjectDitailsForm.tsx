@@ -1,16 +1,14 @@
-import { useParams, useSearchParams } from "react-router";
+import { useParams } from "react-router";
 import { ProjectType } from "@/types/ProjectType";
 import { Skeleton } from "../ui/skeleton";
 import { useAcademicProjects } from "@/hooks/useAcademicProjects";
-import { ProjectSectionsList } from "./ProjectSectionList";
 import { Card, CardContent, CardHeader, CardTitle } from "../ui/card";
+import { FileText } from "lucide-react";
 
 export const ProjectDetailsForm = () => {
     const { projectId } = useParams<{ projectId?: string }>();
     const parsedProjectId = projectId ? Number(projectId) : null;
     const { academicProject, academicProjectLoading, academicProjectError } = useAcademicProjects(null, parsedProjectId);
-
-    console.log(projectId, academicProject);
 
     if (academicProjectLoading) {
         return (
@@ -108,11 +106,15 @@ export const ProjectDetailsForm = () => {
                             <CardContent className="space-y-4">
                                 <div>
                                     <label className="text-sm font-medium text-foreground">Название</label>
-                                    <p className="mt-1 text-foreground">{academicProject?.title || "Не указано"}</p>
+                                    <p className="mt-1 text-foreground text-lg font-medium">
+                                        {academicProject?.title || "Не указано"}
+                                    </p>
                                 </div>
                                 <div>
                                     <label className="text-sm font-medium text-foreground">Описание</label>
-                                    <p className="mt-1 text-foreground">{academicProject?.description || "Не указано"}</p>
+                                    <p className="mt-1 text-foreground whitespace-pre-wrap">
+                                        {academicProject?.description || "Не указано"}
+                                    </p>
                                 </div>
                                 <div>
                                     <label className="text-sm font-medium text-foreground">Тип проекта</label>
@@ -122,6 +124,8 @@ export const ProjectDetailsForm = () => {
                                 </div>
                             </CardContent>
                         </Card>
+
+                        {/* Список разделов */}
                         <Card>
                             <CardHeader>
                                 <CardTitle>Обязательные разделы</CardTitle>
@@ -130,44 +134,76 @@ export const ProjectDetailsForm = () => {
                                 </p>
                             </CardHeader>
                             <CardContent>
-                                {/* <ProjectSectionsList */}
-                                {/*     fields={academicProject?.academicProjectChapters.map((chapter, index) => ({ */}
-                                {/*         id: String(chapter.index), */}
-                                {/*         ...chapter, */}
-                                {/*     })) || []} */}
-                                {/* /> */}
+                                <div className="space-y-3">
+                                    {academicProject?.academicWorkChapters && academicProject.academicWorkChapters.length > 0 ? (
+                                        academicProject.academicWorkChapters
+                                            .sort((a, b) => a.index - b.index)
+                                            .map((chapter) => (
+                                                <div
+                                                    key={chapter.title}
+                                                    className="p-4 bg-muted rounded-lg border"
+                                                >
+                                                    <div className="flex items-start gap-3">
+                                                        <div className="flex items-center justify-center w-6 h-6 bg-primary text-primary-foreground rounded text-xs font-medium mt-0.5">
+                                                            {chapter.index + 1}
+                                                        </div>
+                                                        <div className="flex-1">
+                                                            <h3 className="font-semibold text-foreground">
+                                                                {chapter.title || "Без названия"}
+                                                            </h3>
+                                                            {chapter.description && (
+                                                                <p className="text-sm text-muted-foreground mt-1 whitespace-pre-wrap">
+                                                                    {chapter.description}
+                                                                </p>
+                                                            )}
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            ))
+                                    ) : (
+                                        <div className="text-center py-8 text-muted-foreground">
+                                            <FileText className="w-12 h-12 mx-auto mb-4 opacity-50" />
+                                            <p>Разделы не добавлены</p>
+                                        </div>
+                                    )}
+                                </div>
                             </CardContent>
                         </Card>
                     </div>
+
                     <div className="lg:col-span-1 space-y-6">
                         <Card>
                             <CardHeader>
                                 <CardTitle>Рецензент</CardTitle>
                             </CardHeader>
                             <CardContent>
-                                <div>
+                                <div className="space-y-2">
                                     <label className="text-sm font-medium text-foreground">Преподаватель</label>
-                                    <p className="mt-1 text-foreground">
+                                    <p className="text-foreground font-medium">
                                         {academicProject
-                                            ? `${academicProject.teacherName} ${academicProject.teacherLastName} ${academicProject.teacherMiddleName || ""}`.trim()
+                                            ? `${academicProject.teacherName || ''} ${academicProject.teacherLastName || ''} ${academicProject.teacherMiddleName || ''}`.trim()
                                             : "Не указано"}
                                     </p>
-                                    <p className="mt-1 text-muted-foreground">{academicProject?.teacherEmail || "Не указано"}</p>
+                                    {academicProject?.teacherEmail && (
+                                        <p className="text-muted-foreground text-sm">
+                                            {academicProject.teacherEmail}
+                                        </p>
+                                    )}
                                 </div>
                             </CardContent>
                         </Card>
+
                         <Card>
                             <CardHeader>
                                 <CardTitle>Группа</CardTitle>
                             </CardHeader>
-                            {/* <CardContent> */}
-                            {/*     <div> */}
-                            {/*         <label className="text-sm font-medium text-foreground">Группа</label> */}
-                            {/*         <p className="mt-1 text-foreground"> */}
-                            {/*             {academicProject?.groupId ? `Группа ${academicProject.groupId}` : "Не указано"} */}
-                            {/*         </p> */}
-                            {/*     </div> */}
-                            {/* </CardContent> */}
+                            <CardContent>
+                                <div className="space-y-2">
+                                    <p className="text-foreground font-medium">
+                                        {academicProject?.groupName ? academicProject.groupName : "Не указано"}
+                                    </p>
+                                </div>
+                            </CardContent>
                         </Card>
                     </div>
                 </div>

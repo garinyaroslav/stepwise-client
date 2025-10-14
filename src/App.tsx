@@ -22,9 +22,9 @@ function AppContent() {
 
     // TODO: on load, check the token validity via Query
     // useEffect(() => {
-    //   if (token) {
-    //     queryClient.fetchQuery({ queryKey: ['user'], queryFn: validateToken });
-    //   }
+    //     if (token) {
+    //         queryClient.fetchQuery({ queryKey: ['user'], queryFn: validateToken });
+    //     }
     // }, [token]);
 
     return (
