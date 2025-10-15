@@ -17,7 +17,7 @@ import { Textarea } from "../ui/textarea";
 import { toast } from "sonner";
 import { useDebounce } from "@/hooks/useDebounce";
 import { useGroups } from "@/hooks/useGroups";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Popover, PopoverContent, PopoverTrigger } from "../ui/popover";
 import {
     Command,
@@ -47,7 +47,11 @@ export const ProjectAddForm = () => {
     const { teachers, isTeachresLoading, teachersError } = useTeachers(
         teacherDebouncedSearch,
     );
-    const { createAcademicProject: createAcademicProjectM } = useAcademicProjects(null, null);
+    const {
+        createAcademicProject: createAcademicProjectM,
+        isCreatingProject,
+        createAcademicProjectError
+    } = useAcademicProjects(null, null);
 
     const form = useForm<z.infer<typeof createAcademicProject>>({
         resolver: zodResolver(createAcademicProject),
@@ -92,19 +96,36 @@ export const ProjectAddForm = () => {
 
     const onSubmit = async (data: z.infer<typeof createAcademicProject>) => {
         try {
+            createAcademicProjectM.reset();
+
             data.chapters = data.chapters.map((chapter, index) => {
                 chapter.index = index;
                 return chapter;
-            })
-            console.log(data);
-            createAcademicProjectM(data as CreateAcademicProject);
-            toast.success("Проект успешно создан.");
-            form.reset();
+            });
+
+            createAcademicProjectM.mutate(data as CreateAcademicProject);
         } catch (error) {
             console.error("Error creating project:", error);
             toast.error("Произошла ошибка при создании проекта.");
         }
     };
+
+    useEffect(() => {
+        if (createAcademicProjectError) {
+            toast.error(
+                createAcademicProjectError instanceof Error
+                    ? createAcademicProjectError.message
+                    : "Произошла неизвестная ошибка при создании проекта"
+            );
+        }
+    }, [createAcademicProjectError]);
+
+    useEffect(() => {
+        if (!isCreatingProject && !createAcademicProjectError && createAcademicProjectM.status === 'success') {
+            toast.success("Проект успешно создан.");
+            form.reset();
+        }
+    }, [isCreatingProject, createAcademicProjectError, createAcademicProjectM.status]);
 
     return (
         <div className="flex min-h-screen">

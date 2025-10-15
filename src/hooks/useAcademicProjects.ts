@@ -43,9 +43,10 @@ export const useAcademicProjects = (groupId: number | null, projectId: number | 
             });
         },
         onError: (error) => {
-            console.error("Error while createing academicProject", error);
+            console.error("Error while creating academicProject", error);
         },
     });
+
 
     return {
         academicProjects: academicProjectsQuery.data || [],
@@ -54,6 +55,8 @@ export const useAcademicProjects = (groupId: number | null, projectId: number | 
         academicProject: academicProjectQuery.data,
         academicProjectLoading: academicProjectQuery.isLoading,
         academicProjectError: academicProjectQuery.error,
-        createAcademicProject: createAcademicProjectMutation.mutate,
+        createAcademicProject: createAcademicProjectMutation,
+        isCreatingProject: createAcademicProjectMutation.isPending,
+        createAcademicProjectError: createAcademicProjectMutation.error,
     };
 };
