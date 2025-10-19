@@ -18,6 +18,7 @@ import { PasswordInput } from "../ui/password-input";
 import { generatePassword } from "@/utils/generatePassword";
 import { UserRole } from "@/types/auth/UserRole";
 import { createUser } from "@/api/endpoints";
+import { HttpStatusCode } from "axios";
 
 export const AdminAddForm = () => {
     const form = useForm<z.infer<typeof userRegister>>({
@@ -31,19 +32,25 @@ export const AdminAddForm = () => {
 
     const onSubmit = async (data: z.infer<typeof userRegister>) => {
         try {
-            await createUser({
+            const res = await createUser({
                 username: data.username,
                 email: data.email,
                 password: data.password,
                 role: UserRole.ADMIN,
             });
 
-            console.log("Student created:", data);
-            toast.success("Администратор успешно создан.");
-            form.reset();
-        } catch (error) {
-            console.error("Error creating student:", error);
-            toast.success("Произошла ошибка при создании администратора.");
+            if (res.status === HttpStatusCode.Created) {
+                console.log("Admin created:", data);
+                toast.success("Администратор успешно создан.");
+                form.reset();
+            }
+        } catch (error: any) {
+            if (error.response?.status === HttpStatusCode.Conflict) {
+                toast.error("Администратор с таким именем пользователя или электронной почтой уже существует.");
+            } else {
+                toast.error("Произошла ошибка при создании администратора.");
+            }
+            console.error("Error creating admin:", error);
         }
     };
 

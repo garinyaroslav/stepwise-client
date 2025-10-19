@@ -153,18 +153,12 @@ export const removeStudentFromGroup = async (
 export const createUser = async (
     userObj: UserForCreate,
 ): Promise<AxiosResponse<UserCreateResponse>> => {
-    try {
-        const createRes = await axios.post<UserCreateResponse>(
-            "/auth/signup",
-            userObj,
-        );
-        if (createRes.status !== HttpStatusCode.Created)
-            throw new Error("User creation failed");
+    const createRes = await axios.post<UserCreateResponse>(
+        "/auth/signup",
+        userObj,
+    );
 
-        return createRes;
-    } catch (error) {
-        throw error instanceof Error ? error : new Error("Network error");
-    }
+    return createRes;
 };
 
 export const createStudent = async (
@@ -175,8 +169,12 @@ export const createStudent = async (
             `/group/${studentObj.groupId}`,
         );
 
-        if (groupRes.status !== HttpStatusCode.Ok)
-            throw new Error("Group fetch failed");
+        if (groupRes.status === HttpStatusCode.NotFound) {
+            throw new Error("Группа не найдена.");
+        }
+        if (groupRes.status !== HttpStatusCode.Ok) {
+            throw new Error("Не удалось получить данные группы.");
+        }
 
         const studentIds = groupRes.data.students.map((s) => s.id);
 
@@ -187,20 +185,34 @@ export const createStudent = async (
             role: UserRole.STUDENT,
         });
 
+
         studentIds.push(createRes.data.id);
 
-        const res = await axios.put("/group", {
+        const updateRes = await axios.put("/group", {
             id: groupRes.data.id,
             studentIds: studentIds,
         });
 
-        if (res.status !== HttpStatusCode.Ok)
-            throw new Error("Updating group with new student failed");
-    } catch (error) {
-        throw error instanceof Error ? error : new Error("Network error");
+        if (updateRes.status !== HttpStatusCode.Ok) {
+            throw new Error("Обновление группы с новым студентом не удалось.");
+        }
+
+    } catch (error: any) {
+        if (error.response?.status === HttpStatusCode.Conflict) {
+            throw new Error("Студент с таким именем пользователя или почтой уже существует.");
+        }
+
+        if (error.response?.status === HttpStatusCode.NotFound) {
+            throw new Error("Группа не найдена.");
+        }
+
+        if (error instanceof Error) {
+            throw error;
+        }
+
+        throw new Error("Произошла ошибка при создании студента.");
     }
 };
-
 export const getAcademicProjectsByGroupId = async (
     groupId?: number,
 ): Promise<AcademicProject[]> => {

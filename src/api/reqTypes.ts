@@ -3,6 +3,7 @@ import { ProjectChapter } from "@/types/ProjectChapter";
 import { ProjectType } from "@/types/ProjectType";
 
 export interface Credentials {
+    username: string;
     password: string;
 }
 

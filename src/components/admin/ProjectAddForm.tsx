@@ -287,7 +287,7 @@ export const ProjectAddForm = () => {
                                                                 )}
                                                                 {!teachersError && teachers.length === 0 && (
                                                                     <CommandEmpty>
-                                                                        Учителя не найдены.
+                                                                        Преподаватели не найдены.
                                                                     </CommandEmpty>
                                                                 )}
                                                                 {!teachersError &&
