@@ -245,3 +245,16 @@ export const createAcademicProject = async (
         throw error instanceof Error ? error : new Error("Network error");
     }
 }
+
+export const exportGroupCredentials = async (groupId: number) => {
+    try {
+        const res = await axios.get(`/user/student/${groupId}/export`, { responseType: "blob" });
+
+        if (res.status !== HttpStatusCode.Ok)
+            throw new Error("Error while export grpup credentials");
+
+        return res;
+    } catch (error) {
+        throw error instanceof Error ? error : new Error("Network error");
+    }
+}

@@ -4,9 +4,11 @@ import { Input } from "../ui/input";
 import { UserWithProfile } from "@/types/UserWithProfile";
 import { FC, useState } from "react";
 import { Skeleton } from "../ui/skeleton";
-import { CircleMinus, CirclePlus } from "lucide-react";
+import { CircleMinus, CirclePlus, FileDown } from "lucide-react";
 import { useStudents } from "@/hooks/useStudents";
 import { useDebounce } from "@/hooks/useDebounce";
+import { exportGroupCredentials } from "@/api/endpoints";
+import { toast } from "sonner";
 
 export const GroupSetting = () => {
     const { selectedGroup, students, studentsError, isStudentsLoading } =
@@ -19,6 +21,24 @@ export const GroupSetting = () => {
         isStudentsLoading: isAvailableStudentsLoading,
         studentsError: availableStudentsError,
     } = useStudents(debouncedStudentSearch);
+
+    const handleExport = async () => {
+        try {
+            const res = await exportGroupCredentials(selectedGroup!.id);
+
+            const url = window.URL.createObjectURL(new Blob([res.data]));
+            const link = document.createElement("a");
+            link.href = url;
+            link.setAttribute("download", `group_${selectedGroup!.name}_credentials.xlsx`);
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            window.URL.revokeObjectURL(url);
+        } catch (error) {
+            toast.error("Error exporting group credentials")
+            console.error("Error exporting group credentials:", error);
+        }
+    }
 
     const renderStudents = () => {
         if (studentsError)
@@ -67,13 +87,20 @@ export const GroupSetting = () => {
     return (
         <div className="lg:col-span-2">
             <div className="bg-background rounded-lg border-2">
-                <div className="p-6 border-b border-border">
-                    <h3 className="text-lg font-medium leading-6 text-foreground">
-                        Настроить группу: {selectedGroup?.name || "Не выбрано"}
-                    </h3>
-                    <p className="mt-1 text-sm text-muted-foreground">
-                        Добавляйте и удаляйте студентов из этой группы.
-                    </p>
+                <div className="flex justify-between items-center p-6 border-b border-border">
+                    <div>
+                        <h3 className="text-lg font-medium leading-6 text-foreground">
+                            Настроить группу: {selectedGroup?.name || "Не выбрано"}
+                        </h3>
+                        <p className="mt-1 text-sm text-muted-foreground">
+                            Добавляйте и удаляйте студентов из этой группы.
+                        </p>
+                    </div>
+                    {selectedGroup !== null &&
+                        <Button size={"icon"} onClick={handleExport}>
+                            <FileDown />
+                        </Button>
+                    }
                 </div>
                 <div className="p-6">
                     <div className="mb-6">
