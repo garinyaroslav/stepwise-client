@@ -19,6 +19,7 @@ import { generatePassword } from "@/utils/generatePassword";
 import { UserRole } from "@/types/auth/UserRole";
 import { createUser } from "@/api/endpoints";
 import { HttpStatusCode } from "axios";
+import { downloadExcelFileWithXLSX } from "@/utils/downloadCredentialsXlsx";
 
 export const TeacherAddForm = () => {
     const form = useForm<z.infer<typeof userRegister>>({
@@ -41,6 +42,7 @@ export const TeacherAddForm = () => {
 
             if (res.status === HttpStatusCode.Created) {
                 console.log("Teacher created:", data);
+                downloadExcelFileWithXLSX(data.username, data.email, data.password);
                 toast.success("Преподаватель успешно создан.");
                 form.reset();
             }
