@@ -1,7 +1,7 @@
-import XLSX from 'xlsx';
-
 export const downloadExcelFileWithXLSX = async (username: string, email: string, password: string) => {
     try {
+        const XLSX = await import('xlsx');
+
         const workbook = XLSX.utils.book_new();
         const worksheet = XLSX.utils.aoa_to_sheet([
             ["Username", "Email", "Password"],
