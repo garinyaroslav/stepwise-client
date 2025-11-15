@@ -261,12 +261,12 @@ export const ProjectAddForm = () => {
                                                                 disabled={isTeachresLoading}
                                                             >
                                                                 {isTeachresLoading
-                                                                    ? "Загрузка учителей..."
+                                                                    ? "Загрузка преподавателей..."
                                                                     : field.value
                                                                         ? teachers.find(
                                                                             (t) => String(t.id) === field.value,
                                                                         )?.username
-                                                                        : "Выберите учителя..."}
+                                                                        : "Выберите преподавателя..."}
                                                                 <ChevronsUpDownIcon className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                                                             </Button>
                                                         </FormControl>
@@ -276,12 +276,12 @@ export const ProjectAddForm = () => {
                                                             <CommandInput
                                                                 value={teachersSearch}
                                                                 onValueChange={setTeachersSearch}
-                                                                placeholder="Поиск учителя..."
+                                                                placeholder="Поиск преподавателя..."
                                                             />
                                                             <CommandList>
                                                                 {teachersError && (
                                                                     <CommandEmpty>
-                                                                        Ошибка загрузки учителей:{" "}
+                                                                        Ошибка загрузки преподавателей:{" "}
                                                                         {teachersError.message}
                                                                     </CommandEmpty>
                                                                 )}

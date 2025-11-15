@@ -37,7 +37,7 @@ export const TeacherAddForm = () => {
                 username: data.username,
                 email: data.email,
                 password: data.password,
-                role: UserRole.ADMIN,
+                role: UserRole.TEACHER,
             });
 
             if (res.status === HttpStatusCode.Created) {
