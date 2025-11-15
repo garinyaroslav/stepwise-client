@@ -78,8 +78,8 @@ export const ProjectManagement = () => {
         return academicProjects.map((p) => {
             const type =
                 p.type === ProjectType.thesis ? "Дипломная работа" : "Курсовая работа";
-            const teacherName = p.teacherName || null;
-            const teacherLastName = p.teacherLastName || null;
+
+            const teacherName = !p.teacherName && !p.teacherLastName ? p.teacherEmail : `${p.teacherName ?? ""} ${p.teacherLastName ?? ""}`;
 
             return (
                 <TableRow
@@ -89,7 +89,7 @@ export const ProjectManagement = () => {
                 >
                     <TableCell className="font-medium">{p.title}</TableCell>
                     <TableCell>{type}</TableCell>
-                    <TableCell>{`${teacherName} ${teacherLastName}`}</TableCell>
+                    <TableCell>{teacherName}</TableCell>
                     <TableCell>{p.teacherEmail}</TableCell>
                 </TableRow>
             );
