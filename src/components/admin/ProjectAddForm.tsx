@@ -314,7 +314,7 @@ export const ProjectAddForm = () => {
                                                                                                 : "opacity-0",
                                                                                         )}
                                                                                     />
-                                                                                    {`@${t.username} (${t.firstName || ""} ${t.lastName || ""})`.trim()}
+                                                                                    {`@${t.username}${t.firstName || t.lastName ? ` ${t.firstName || ""} ${t.lastName || ""}` : ""}`.trim()}
                                                                                 </CommandItem>
                                                                             ))}
                                                                         </CommandGroup>
