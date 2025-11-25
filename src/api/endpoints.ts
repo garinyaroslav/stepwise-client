@@ -163,7 +163,7 @@ export const createUser = async (
 
 export const createStudent = async (
     studentObj: StudentForCreate,
-): Promise<void> => {
+): Promise<AxiosResponse<UserCreateResponse>> => {
     try {
         const groupRes = await axios.get<GroupResponse>(
             `/group/${studentObj.groupId}`,
@@ -197,6 +197,7 @@ export const createStudent = async (
             throw new Error("Обновление группы с новым студентом не удалось.");
         }
 
+        return createRes;
     } catch (error: any) {
         if (error.response?.status === HttpStatusCode.Conflict) {
             throw new Error("Студент с таким именем пользователя или почтой уже существует.");

@@ -10,7 +10,7 @@ export const downloadExcelFileWithXLSX = async (username: string, email: string,
 
         XLSX.utils.book_append_sheet(workbook, worksheet, "Admin Credentials");
 
-        XLSX.writeFile(workbook, `credentials_${username}.xlsx`);
+        XLSX.writeFile(workbook, `данные_для_входа_${username}.xlsx`);
     } catch (error) {
         console.error("Error generating Excel file:", error);
     }

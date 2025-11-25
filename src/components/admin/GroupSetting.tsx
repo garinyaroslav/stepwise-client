@@ -29,7 +29,7 @@ export const GroupSetting = () => {
             const url = window.URL.createObjectURL(new Blob([res.data]));
             const link = document.createElement("a");
             link.href = url;
-            link.setAttribute("download", `group_${selectedGroup!.name}_credentials.xlsx`);
+            link.setAttribute("download", `данные_для_входа_группа_${selectedGroup!.name}.xlsx`);
             document.body.appendChild(link);
             link.click();
             document.body.removeChild(link);

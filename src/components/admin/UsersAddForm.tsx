@@ -32,6 +32,8 @@ import { PasswordInput } from "../ui/password-input";
 import { generatePassword } from "@/utils/generatePassword";
 import { createStudent } from "@/api/endpoints";
 import { UserRole } from "@/types/auth/UserRole";
+import { HttpStatusCode } from "axios";
+import { downloadExcelFileWithXLSX } from "@/utils/downloadCredentialsXlsx";
 
 export const UsersAddForm = () => {
     const [popoverOpen, setPopoverOpen] = useState(false);
@@ -51,7 +53,7 @@ export const UsersAddForm = () => {
 
     const onSubmit = async (data: z.infer<typeof studentRegister>) => {
         try {
-            await createStudent({
+            const res = await createStudent({
                 username: data.username,
                 email: data.email,
                 password: data.password,
@@ -59,12 +61,19 @@ export const UsersAddForm = () => {
                 groupId: Number(data.groupId),
             });
 
-            console.log("Student created:", data);
-            toast.success("Студент успешно создан.");
-            form.reset();
-        } catch (error) {
+            if (res.status === HttpStatusCode.Created) {
+                console.log("Student created:", data);
+                downloadExcelFileWithXLSX(data.username, data.email, data.password);
+                toast.success("Студент успешно создан.");
+                form.reset();
+            }
+        } catch (error: any) {
+            if (error.response?.status === HttpStatusCode.Conflict) {
+                toast.error("Студент с таким именем пользователя или электронной почтой уже существует.");
+            } else {
+                toast.error(`Произошла ошибка при создании студента: ${error.message}`);
+            }
             console.error("Error creating student:", error);
-            toast.error(error instanceof Error ? error.message : "Неизвестная ошибка при создании студента.");
         }
     };
 
