@@ -9,7 +9,6 @@ import { useAuthStore } from "./stores/authStore";
 import { AdminDashboard } from "./pages/admin/AdminDashboard";
 import { Unauthorized } from "./pages/general/Unauthorized";
 import { UserManagement } from "./pages/admin/UserManagement";
-import { MainManagement } from "./pages/admin/MainManagement";
 import { GroupsManagement } from "./pages/admin/GroupsManagement";
 import { Toaster } from "./components/ui/sonner";
 import { ProjectManagement } from "./pages/admin/ProjectManagement";

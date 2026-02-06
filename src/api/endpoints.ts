@@ -14,7 +14,7 @@ import { UserWithProfile } from "@/types/UserWithProfile";
 import { AcademicProject } from "@/types/AcademicProject";
 
 export const loginReq = async (credentials: Credentials) => {
-    const response = await axios.post("/auth/signin", credentials);
+    const response = await axios.post("/auth/sessions", credentials);
     if (response.status !== HttpStatusCode.Ok) throw new Error("Login failed");
     return response.data;
 };
@@ -154,7 +154,7 @@ export const createUser = async (
     userObj: UserForCreate,
 ): Promise<AxiosResponse<UserCreateResponse>> => {
     const createRes = await axios.post<UserCreateResponse>(
-        "/auth/signup",
+        "/auth/users",
         userObj,
     );
 

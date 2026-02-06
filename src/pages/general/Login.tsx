@@ -14,13 +14,10 @@ import { Input } from "@/components/ui/input";
 import { loginScheme } from "@/schemes/loginScheme";
 import type z from "zod";
 import { useLogin } from "@/hooks/useLogin";
-import { useNavigate } from "react-router";
-import { useAuthStore } from "@/stores/authStore";
 
 const Login = () => {
     const mutation = useLogin();
-    const navigate = useNavigate();
-    const { isAuthenticated } = useAuthStore();
+
     const form = useForm<z.infer<typeof loginScheme>>({
         resolver: zodResolver(loginScheme),
         defaultValues: {
@@ -29,13 +26,9 @@ const Login = () => {
         },
     });
 
-    if (isAuthenticated) {
-        navigate("/dashboard");
-        return null;
-    }
-
-    const onSubmit = (data: z.infer<typeof loginScheme>) =>
+    const onSubmit = async (data: z.infer<typeof loginScheme>) => {
         mutation.mutate({ username: data.username, password: data.password });
+    }
 
     return (
         <div className="flex justify-center items-center flex-col size-full">
@@ -57,7 +50,10 @@ const Login = () => {
                     </div>
                     <Form {...form}>
                         <form
-                            onSubmit={form.handleSubmit(onSubmit)}
+                            onSubmit={(e) => {
+                                e.preventDefault();
+                                form.handleSubmit(onSubmit)();
+                            }}
                             className="mt-8 space-y-6"
                         >
                             <FormField
