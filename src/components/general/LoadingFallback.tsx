@@ -16,7 +16,7 @@ export const LoadingFallback = () => {
                 }
                 return prev + Math.random() * 15;
             });
-        }, 100);
+        }, 10);
 
         return () => {
             clearTimeout(showTimer);

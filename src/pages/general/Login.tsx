@@ -44,7 +44,7 @@ const Login = () => {
                         <h2 className="text-2xl font-bold text-foreground">
                             Войдите в свою учетную запись
                         </h2>
-                        <p className="mt-2 text-sm text-secondary-foreground">
+                        <p className="mt-2 text-sm text-muted-foreground">
                             Добро пожаловать! Пожалуйста, введите свои данные.
                         </p>
                     </div>

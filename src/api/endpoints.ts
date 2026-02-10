@@ -264,9 +264,22 @@ export const exportGroupCredentials = async (groupId: number) => {
         const res = await axios.get(`/user/student/${groupId}/export`, { responseType: "blob" });
 
         if (res.status !== HttpStatusCode.Ok)
-            throw new Error("Error while export grpup credentials");
+            throw new Error("Error while export group credentials");
 
         return res;
+    } catch (error) {
+        throw error instanceof Error ? error : new Error("Network error");
+    }
+}
+
+export const getMyProfile = async () => {
+    try {
+        const res = await axios.get<UserWithProfile>("/user/profile/my");
+
+        if (res.status !== HttpStatusCode.Ok)
+            throw new Error("Error while getting profile");
+
+        return res.data;
     } catch (error) {
         throw error instanceof Error ? error : new Error("Network error");
     }

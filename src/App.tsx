@@ -1,12 +1,9 @@
 import { lazy, Suspense } from "react";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router";
 import { QueryClientProvider } from "@tanstack/react-query";
-import { ProtectedRoute } from "./components/ProtectedRoute";
-import { LoadingFallback } from "./components/LoadingFallback";
 import { UserRole } from "./types/auth/UserRole";
 import { queryClient } from "./queryClient";
 import { useAuthStore } from "./stores/authStore";
-import { AdminDashboard } from "./pages/admin/AdminDashboard";
 import { Unauthorized } from "./pages/general/Unauthorized";
 import { UserManagement } from "./pages/admin/UserManagement";
 import { GroupsManagement } from "./pages/admin/GroupsManagement";
@@ -14,7 +11,13 @@ import { Toaster } from "./components/ui/sonner";
 import { ProjectManagement } from "./pages/admin/ProjectManagement";
 import { ProjectAddForm } from "./components/admin/ProjectAddForm";
 import { ProjectDetailsForm } from "./components/admin/ProjectDitailsForm";
+import { LoadingFallback } from "./components/general/LoadingFallback";
+import { ProtectedRoute } from "./components/general/ProtectedRoute";
+
 const Login = lazy(() => import("./pages/general/Login"));
+const AdminDashboard = lazy(() => import("./pages/admin/AdminDashboard"));
+const TeacherDashboard = lazy(() => import("./pages/teacher/TeacherDashboard"));
+const StudentDashboard = lazy(() => import("./pages/student/StudentDashboard"));
 
 function AppContent() {
     const { isAuthenticated, user } = useAuthStore();
@@ -51,8 +54,6 @@ function AppContent() {
                     </ProtectedRoute>
                 }
             >
-                {/* <Route path="main" element={<MainManagement />} /> */}
-                {/* <Route path="users" element={<UserManagement />} /> */}
                 <Route path="" element={<UserManagement />} />
                 <Route path="groups" element={<GroupsManagement />} />
                 <Route path="projects">
@@ -62,18 +63,20 @@ function AppContent() {
                 </Route>
             </Route>
             <Route
-                path="/student/dashboard"
-                element={
-                    <ProtectedRoute allowedRoles={[UserRole.STUDENT]}>
-                        <div>student dashboard</div>
-                    </ProtectedRoute>
-                }
-            />
-            <Route
                 path="/teacher/dashboard"
                 element={
                     <ProtectedRoute allowedRoles={[UserRole.TEACHER]}>
-                        <div>teacher dashboard</div>
+                        <TeacherDashboard />
+                    </ProtectedRoute>
+                }
+            >
+                <Route path="" element={<>123</>} />
+            </Route>
+            <Route
+                path="/student/dashboard"
+                element={
+                    <ProtectedRoute allowedRoles={[UserRole.STUDENT]}>
+                        <StudentDashboard />
                     </ProtectedRoute>
                 }
             />
