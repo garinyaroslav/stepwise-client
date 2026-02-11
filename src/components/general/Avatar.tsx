@@ -28,7 +28,7 @@ export const AvatarProfileLink: FC<AvatarProfileLinkProps> = ({ onClick }) => {
 
     return (
         <Avatar
-            onClick={onClick}
+            onClick={() => onClick()}
             className="w-9 h-9 cursor-pointer"
         >
             {isProfileLoading ? (

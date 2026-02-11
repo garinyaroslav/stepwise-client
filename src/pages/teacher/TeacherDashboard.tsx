@@ -1,30 +1,22 @@
+import { Outlet, useNavigate } from "react-router";
 import { Topbar } from "@/components/general/Topbar";
-import { CreateWorkModal } from "@/components/teacher/CreateWorkModal";
 // import { ProfileModal } from "@/components/teacher/ProfileModal";
-import { StudentWorksView } from "@/components/teacher/StudentWorksView";
-import { TemplatesManagement } from "@/components/teacher/TemplatesManagement";
-
-// type View = 'templates' | 'create-work' | 'student-works' | 'profile';
 
 const TeacherDashboard = () => {
-    const topbarItems = [
-        { name: 'Работы студентов', onClick: () => { } },
-        { name: 'Управление шаблонами', onClick: () => { } },
-        { name: 'Создание академической работы', onClick: () => { } },
-    ];
+    const navigate = useNavigate();
 
+    const topbarItems = [
+        { name: 'Работы студентов', onClick: () => navigate("") },
+        { name: 'Управление шаблонами', onClick: () => navigate("templates") },
+        { name: 'Создание академической работы', onClick: () => navigate("create-work") },
+    ];
 
     return (
         <div className="min-h-screen">
             <Topbar items={topbarItems} />
-
-            {/* <main className="max-w-7xl mx-auto px-6 py-8"> */}
-            {/*     {currentView === 'templates' && <TemplatesManagement />} */}
-            {/*     {currentView === 'create-work' && <CreateWorkModal />} */}
-            {/*     {currentView === 'student-works' && <StudentWorksView />} */}
-            {/* </main> */}
-
-            {/* {showProfile && <ProfileModal onClose={() => setShowProfile(false)} />} */}
+            <main className="max-w-7xl mx-auto px-6 py-8">
+                <Outlet />
+            </main>
         </div >
     );
 }

@@ -7,8 +7,8 @@ interface TopbarProps {
 }
 
 export const Topbar: FC<TopbarProps> = ({ items }) => {
-    const [selected, setSelected] = useState(0);
     const navigate = useNavigate();
+    const [selected, setSelected] = useState(0);
 
     return (
         <header className="bg-white border-b border-gray-200 sticky top-0 z-50">

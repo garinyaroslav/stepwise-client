@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Search, Plus, Trash2, Eye, ChevronLeft, ChevronRight } from 'lucide-react';
 import { TemplateDetailView } from './TemplateDetailView';
-import { TemplateModal } from './TemplateModal';
+import { TemplateModal } from '@/components/teacher/TemplateModal';
 
 export type WorkTemplateChapter = {
     id: string;

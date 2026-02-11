@@ -13,6 +13,10 @@ import { ProjectAddForm } from "./components/admin/ProjectAddForm";
 import { ProjectDetailsForm } from "./components/admin/ProjectDitailsForm";
 import { LoadingFallback } from "./components/general/LoadingFallback";
 import { ProtectedRoute } from "./components/general/ProtectedRoute";
+import { CreateWorkModal } from "./components/teacher/CreateWorkModal";
+import { StudentWorksView } from "./pages/student/StudentWorksView";
+import { TemplatesManagement } from "./pages/student/TemplatesManagement";
+import { Profile } from "./pages/general/Profile";
 
 const Login = lazy(() => import("./pages/general/Login"));
 const AdminDashboard = lazy(() => import("./pages/admin/AdminDashboard"));
@@ -28,6 +32,7 @@ function AppContent() {
     //         queryClient.fetchQuery({ queryKey: ['user'], queryFn: validateToken });
     //     }
     // }, [token]);
+
 
     return (
         <Routes>
@@ -70,7 +75,10 @@ function AppContent() {
                     </ProtectedRoute>
                 }
             >
-                <Route path="" element={<>123</>} />
+                <Route path="" element={<StudentWorksView />} />
+                <Route path="create-work" element={<CreateWorkModal />} />
+                <Route path="templates" element={<TemplatesManagement />} />
+                <Route path="profile" element={<Profile />} />
             </Route>
             <Route
                 path="/student/dashboard"
