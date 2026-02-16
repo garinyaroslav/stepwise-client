@@ -284,3 +284,18 @@ export const getMyProfile = async () => {
         throw error instanceof Error ? error : new Error("Network error");
     }
 }
+
+
+export const updateMyProfile = async (
+    profileObj: UserWithProfile
+): Promise<AxiosResponse<void>> => {
+    try {
+        const res = await axios.post("/user/profile/my", profileObj);
+        if (res.status !== HttpStatusCode.Ok)
+            throw new Error("Profile updating failed");
+
+        return res;
+    } catch (error) {
+        throw error instanceof Error ? error : new Error("Network error");
+    }
+};

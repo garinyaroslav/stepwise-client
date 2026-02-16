@@ -1,24 +1,31 @@
-import { useState } from 'react';
-import { User, Mail, Phone, MapPin, Lock, AlertCircle } from 'lucide-react';
-
-type UserProfile = {
-    firstName: string;
-    lastName: string;
-    middleName: string;
-    email: string;
-    phoneNumber: string;
-    address: string;
-};
+import { useEffect, useState } from 'react';
+import { Mail, Phone, MapPin, Lock, AlertCircle } from 'lucide-react';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { updateProrileSchema } from '@/schemes/updateProfile';
+import z from 'zod';
+import { FormField, FormItem, FormLabel, FormControl, FormMessage, Form } from '@/components/ui/form';
+import { Input } from '@/components/ui/input';
+import { InputGroup, InputGroupAddon, InputGroupInput } from '@/components/ui/input-group';
+import { useProfile } from '@/hooks/useProfile';
+import { Button } from '@/components/ui/button';
+import { updateMyProfile } from '@/api/endpoints';
 
 export function Profile() {
-    const [profile, setProfile] = useState<UserProfile>({
-        firstName: 'Анна',
-        lastName: 'Иванова',
-        middleName: 'Петровна',
-        email: 'anna.ivanova@university.edu',
-        phoneNumber: '+7 (495) 123-45-67',
-        address: 'Москва, ул. Ленина, д. 10',
-    });
+    const { profile, isProfileLoading, profileError } = useProfile();
+    const form = useForm<z.infer<typeof updateProrileSchema>>({ resolver: zodResolver(updateProrileSchema) });
+
+    useEffect(() => {
+        if (profile == null) return;
+
+        form.reset({
+            firstName: profile.firstName || '',
+            lastName: profile.lastName || '',
+            middleName: profile.middleName || '',
+            phoneNumber: profile.phoneNumber || '',
+            address: profile.address || '',
+        });
+    }, [profile, form]);
 
     const [currentPassword, setCurrentPassword] = useState('********');
     const [resetEmail, setResetEmail] = useState('');
@@ -29,16 +36,27 @@ export function Profile() {
     const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
     const [passwordError, setPasswordError] = useState('');
 
-    const handleProfileChange = (field: keyof UserProfile, value: string) => {
-        setProfile({ ...profile, [field]: value });
-    };
+    const onSubmit = async (data: z.infer<typeof updateProrileSchema>) => {
+        console.log(data);
 
-    const handleSaveProfile = (e: React.FormEvent) => {
-        e.preventDefault();
-        // Mock API call
-        console.log('Saving profile:', profile);
         setMessage({ type: 'success', text: 'Профиль успешно сохранен' });
         setTimeout(() => setMessage(null), 3000);
+
+        try {
+            const res = await updateMyProfile(data);
+
+            console.log("Student created:", data);
+            downloadExcelFileWithXLSX(data.username, data.email, data.password);
+            toast.success("Студент успешно создан.");
+            form.reset();
+        } catch (error: any) {
+            if (error.response?.status === HttpStatusCode.Conflict) {
+                toast.error("Студент с таким именем пользователя или электронной почтой уже существует.");
+            } else {
+                toast.error(`Произошла ошибка при создании студента: ${error.message}`);
+            }
+            console.error("Error creating student:", error);
+        }
     };
 
     const handleRequestPasswordReset = async (e: React.FormEvent) => {
@@ -135,15 +153,13 @@ export function Profile() {
 
     return (
         <div>
-            {/* Header */}
             <div className="mb-8">
                 <h1 className="text-2xl font-semibold mb-2">Настройки профиля</h1>
-                <p className="text-gray-600 text-sm">
+                <p className="text-muted-foreground text-sm">
                     Управляйте своей личной информацией и безопасностью аккаунта
                 </p>
             </div>
 
-            {/* Message */}
             {message && (
                 <div
                     className={`mb-6 p-4 rounded-lg flex items-start gap-3 ${message.type === 'success'
@@ -151,122 +167,125 @@ export function Profile() {
                         : 'bg-red-50 border border-red-200'
                         }`}
                 >
-                    <AlertCircle
-                        className={`w-5 h-5 flex-shrink-0 ${message.type === 'success' ? 'text-green-600' : 'text-red-600'
-                            }`}
-                    />
-                    <p
-                        className={`text-sm ${message.type === 'success' ? 'text-green-800' : 'text-red-800'
-                            }`}
-                    >
+                    <AlertCircle className={`w-5 h-5 flex-shrink-0 ${message.type === 'success' ? 'text-green-600' : 'text-red-600'}`} />
+                    <p className={`text-sm ${message.type === 'success' ? 'text-green-800' : 'text-red-800'}`}>
                         {message.text}
                     </p>
                 </div>
             )}
 
-            {/* Two Column Layout */}
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                {/* Personal Information */}
                 <div className="bg-white rounded-lg border border-gray-200 p-6">
                     <h2 className="font-semibold text-lg mb-6">Личная информация</h2>
 
-                    <form onSubmit={handleSaveProfile} className="space-y-4">
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">Имя</label>
-                            <input
-                                type="text"
-                                required
-                                value={profile.firstName}
-                                onChange={(e) => handleProfileChange('firstName', e.target.value)}
-                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                placeholder="Иван"
+                    <Form {...form}>
+                        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+
+                            <FormField
+                                control={form.control}
+                                name="firstName"
+                                render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel>Имя</FormLabel>
+                                        <FormControl>
+                                            <Input
+                                                placeholder="Иван"
+                                                {...field}
+                                            />
+                                        </FormControl>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
                             />
-                        </div>
 
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">Фамилия</label>
-                            <input
-                                type="text"
-                                required
-                                value={profile.lastName}
-                                onChange={(e) => handleProfileChange('lastName', e.target.value)}
-                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                placeholder="Иванов"
+                            <FormField
+                                control={form.control}
+                                name="lastName"
+                                render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel>Фамилия</FormLabel>
+                                        <FormControl>
+                                            <Input
+                                                placeholder="Иванoв"
+                                                {...field}
+                                            />
+                                        </FormControl>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
                             />
-                        </div>
 
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">Отчество</label>
-                            <input
-                                type="text"
-                                value={profile.middleName}
-                                onChange={(e) => handleProfileChange('middleName', e.target.value)}
-                                className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                placeholder="Петрович"
+                            <FormField
+                                control={form.control}
+                                name="middleName"
+                                render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel>Отчество</FormLabel>
+                                        <FormControl>
+                                            <Input
+                                                placeholder="Петрович"
+                                                {...field}
+                                            />
+                                        </FormControl>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
                             />
-                        </div>
 
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
-                            <div className="relative">
-                                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                                <input
-                                    type="email"
-                                    required
-                                    value={profile.email}
-                                    onChange={(e) => handleProfileChange('email', e.target.value)}
-                                    className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                    placeholder="example@university.edu"
-                                />
+                            <FormField
+                                control={form.control}
+                                name="phoneNumber"
+                                render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel>Номер телефона</FormLabel>
+                                        <FormControl>
+                                            <InputGroup>
+                                                <InputGroupAddon>
+                                                    <Phone />
+                                                </InputGroupAddon>
+                                                <InputGroupInput
+                                                    placeholder="+7 (999) 999-99-99"
+                                                    {...field}
+                                                />
+                                            </InputGroup>
+                                        </FormControl>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
+
+                            <FormField
+                                control={form.control}
+                                name="address"
+                                render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel>Адрес</FormLabel>
+                                        <FormControl>
+                                            <InputGroup>
+                                                <InputGroupAddon>
+                                                    <MapPin />
+                                                </InputGroupAddon>
+                                                <InputGroupInput
+                                                    placeholder="Город, улица, дом"
+                                                    {...field}
+                                                />
+                                            </InputGroup>
+                                        </FormControl>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
+
+                            <div className="flex items-center justify-end gap-3 pt-4">
+                                <Button variant="outline" size="lg" type="submit">
+                                    Отмена
+                                </Button>
+                                <Button variant="default" size="lg" type="submit">
+                                    Сохранить изменения
+                                </Button>
                             </div>
-                        </div>
-
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">
-                                Номер телефона
-                            </label>
-                            <div className="relative">
-                                <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                                <input
-                                    type="tel"
-                                    required
-                                    value={profile.phoneNumber}
-                                    onChange={(e) => handleProfileChange('phoneNumber', e.target.value)}
-                                    className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                    placeholder="+7 (999) 999-99-99"
-                                />
-                            </div>
-                        </div>
-
-                        <div>
-                            <label className="block text-sm font-medium text-gray-700 mb-1">Адрес</label>
-                            <div className="relative">
-                                <MapPin className="absolute left-3 top-3 w-4 h-4 text-gray-400" />
-                                <textarea
-                                    value={profile.address}
-                                    onChange={(e) => handleProfileChange('address', e.target.value)}
-                                    rows={2}
-                                    className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                    placeholder="Город, улица, дом"
-                                />
-                            </div>
-                        </div>
-
-                        <div className="flex items-center justify-end gap-3 pt-4">
-                            <button
-                                type="button"
-                                className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
-                            >
-                                Отмена
-                            </button>
-                            <button
-                                type="submit"
-                                className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-                            >
-                                Сохранить изменения
-                            </button>
-                        </div>
-                    </form>
+                        </form>
+                    </Form>
                 </div>
 
                 {/* Security */}
