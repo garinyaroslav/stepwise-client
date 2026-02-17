@@ -8,14 +8,3 @@ createRoot(document.getElementById("root")!).render(
         <App />
     </StrictMode>,
 );
-
-document.addEventListener('DOMContentLoaded', () => {
-    const style = getComputedStyle(document.body);
-    console.log('Font family:', style.fontFamily);
-
-    if ('fonts' in document) {
-        document.fonts.ready.then(() => {
-            console.log('Fonts loaded:', JSON.stringify(document.fonts));
-        });
-    }
-});
