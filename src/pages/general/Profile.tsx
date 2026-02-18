@@ -3,17 +3,24 @@ import { Mail, Phone, MapPin, Lock, AlertCircle } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { updateProrileSchema } from '@/schemes/updateProfile';
-import z from 'zod';
 import { FormField, FormItem, FormLabel, FormControl, FormMessage, Form } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { InputGroup, InputGroupAddon, InputGroupInput } from '@/components/ui/input-group';
 import { useProfile } from '@/hooks/useProfile';
 import { Button } from '@/components/ui/button';
 import { updateMyProfile } from '@/api/endpoints';
+import { HttpStatusCode } from 'axios';
+import { ProfileDto, Profile as ProfileType } from '@/types/Profile';
+import { useAuthStore } from '@/stores/authStore';
+import { toast } from 'sonner';
 
 export function Profile() {
     const { profile, isProfileLoading, profileError } = useProfile();
-    const form = useForm<z.infer<typeof updateProrileSchema>>({ resolver: zodResolver(updateProrileSchema) });
+    const { user } = useAuthStore();
+    const form = useForm<ProfileType>({
+        resolver: zodResolver(updateProrileSchema),
+        defaultValues: { firstName: '', lastName: '', middleName: '', phoneNumber: '', address: '' }
+    });
 
     useEffect(() => {
         if (profile == null) return;
@@ -36,27 +43,26 @@ export function Profile() {
     const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
     const [passwordError, setPasswordError] = useState('');
 
-    const onSubmit = async (data: z.infer<typeof updateProrileSchema>) => {
-        console.log(data);
-
-        setMessage({ type: 'success', text: 'Профиль успешно сохранен' });
-        setTimeout(() => setMessage(null), 3000);
-
-        try {
-            const res = await updateMyProfile(data);
-
-            console.log("Student created:", data);
-            downloadExcelFileWithXLSX(data.username, data.email, data.password);
-            toast.success("Студент успешно создан.");
-            form.reset();
-        } catch (error: any) {
-            if (error.response?.status === HttpStatusCode.Conflict) {
-                toast.error("Студент с таким именем пользователя или электронной почтой уже существует.");
-            } else {
-                toast.error(`Произошла ошибка при создании студента: ${error.message}`);
-            }
-            console.error("Error creating student:", error);
+    const onSubmit = async (data: ProfileType) => {
+        if (user == null) {
+            toast.error("Произошла ошибка при сохранении профиля");
+            throw new Error('Failed to get current user');
         }
+
+        const res = await updateMyProfile({ ...data, id: user.id } as unknown as ProfileDto);
+        if (res.status !== HttpStatusCode.Ok) {
+            toast.error("Произошла ошибка при сохранении профиля");
+            throw new Error('Failed to update profile');
+        }
+
+        form.reset({
+            firstName: res.data.firstName || '',
+            lastName: res.data.lastName || '',
+            middleName: res.data.middleName || '',
+            phoneNumber: res.data.phoneNumber || '',
+            address: res.data.address || '',
+        });
+        toast.success("Профиль успешно сохранен");
     };
 
     const handleRequestPasswordReset = async (e: React.FormEvent) => {
@@ -159,20 +165,6 @@ export function Profile() {
                     Управляйте своей личной информацией и безопасностью аккаунта
                 </p>
             </div>
-
-            {message && (
-                <div
-                    className={`mb-6 p-4 rounded-lg flex items-start gap-3 ${message.type === 'success'
-                        ? 'bg-green-50 border border-green-200'
-                        : 'bg-red-50 border border-red-200'
-                        }`}
-                >
-                    <AlertCircle className={`w-5 h-5 flex-shrink-0 ${message.type === 'success' ? 'text-green-600' : 'text-red-600'}`} />
-                    <p className={`text-sm ${message.type === 'success' ? 'text-green-800' : 'text-red-800'}`}>
-                        {message.text}
-                    </p>
-                </div>
-            )}
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 <div className="bg-white rounded-lg border border-gray-200 p-6">
@@ -288,7 +280,6 @@ export function Profile() {
                     </Form>
                 </div>
 
-                {/* Security */}
                 <div className="bg-white rounded-lg border border-gray-200 p-6">
                     <h2 className="font-semibold text-lg mb-6">Безопасность</h2>
 
@@ -461,4 +452,3 @@ export function Profile() {
         </div>
     );
 }
-

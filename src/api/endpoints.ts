@@ -12,6 +12,7 @@ import {
 import { GroupResponse, Pageiable, UserCreateResponse } from "./resTypes";
 import { UserWithProfile } from "@/types/UserWithProfile";
 import { AcademicProject } from "@/types/AcademicProject";
+import { ProfileDto } from "@/types/Profile";
 
 export const loginReq = async (credentials: Credentials) => {
     const response = await axios.post("/auth/sessions", credentials);
@@ -274,7 +275,7 @@ export const exportGroupCredentials = async (groupId: number) => {
 
 export const getMyProfile = async () => {
     try {
-        const res = await axios.get<UserWithProfile>("/user/profile/my");
+        const res = await axios.get<UserWithProfile>("/user/profile");
 
         if (res.status !== HttpStatusCode.Ok)
             throw new Error("Error while getting profile");
@@ -287,15 +288,5 @@ export const getMyProfile = async () => {
 
 
 export const updateMyProfile = async (
-    profileObj: UserWithProfile
-): Promise<AxiosResponse<void>> => {
-    try {
-        const res = await axios.post("/user/profile/my", profileObj);
-        if (res.status !== HttpStatusCode.Ok)
-            throw new Error("Profile updating failed");
-
-        return res;
-    } catch (error) {
-        throw error instanceof Error ? error : new Error("Network error");
-    }
-};
+    profileObj: ProfileDto
+): Promise<AxiosResponse<UserWithProfile>> => await axios.put("/user/profile", profileObj);

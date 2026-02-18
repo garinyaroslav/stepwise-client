@@ -1,7 +1,8 @@
-export interface UserWithProfile {
-    firstName: string;
-    lastName: string;
-    middleName: string;
-    phoneNumber: string;
-    address: string;
+import z from "zod";
+import { updateProrileSchema } from "@/schemes/updateProfile";
+
+export type Profile = z.infer<typeof updateProrileSchema>
+
+export interface ProfileDto extends Profile {
+    id: number;
 }
