@@ -290,3 +290,14 @@ export const getMyProfile = async () => {
 export const updateMyProfile = async (
     profileObj: ProfileDto
 ): Promise<AxiosResponse<UserWithProfile>> => await axios.put("/user/profile", profileObj);
+
+export const passowrdResetReq = async (email: string) =>
+    await axios.post("/auth/password-reset-requests", null, {
+        params: {
+            email
+        }
+    });
+
+export const resetPassword = async (token: string, newPassword: string) =>
+    await axios.patch("/auth/passwords", { token, newPassword });
+

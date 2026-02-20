@@ -1,5 +1,5 @@
-import { useEffect, useState } from 'react';
-import { Mail, Phone, MapPin, Lock, AlertCircle } from 'lucide-react';
+import { FormEvent, useEffect, useState } from 'react';
+import { Mail, Phone, MapPin, Lock } from 'lucide-react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { updateProrileSchema } from '@/schemes/updateProfile';
@@ -8,7 +8,7 @@ import { Input } from '@/components/ui/input';
 import { InputGroup, InputGroupAddon, InputGroupInput } from '@/components/ui/input-group';
 import { useProfile } from '@/hooks/useProfile';
 import { Button } from '@/components/ui/button';
-import { updateMyProfile } from '@/api/endpoints';
+import { passowrdResetReq, resetPassword, updateMyProfile } from '@/api/endpoints';
 import { HttpStatusCode } from 'axios';
 import { ProfileDto, Profile as ProfileType } from '@/types/Profile';
 import { useAuthStore } from '@/stores/authStore';
@@ -34,13 +34,10 @@ export function Profile() {
         });
     }, [profile, form]);
 
-    const [currentPassword, setCurrentPassword] = useState('********');
-    const [resetEmail, setResetEmail] = useState('');
     const [resetToken, setResetToken] = useState('');
     const [newPassword, setNewPassword] = useState('');
     const [confirmPassword, setConfirmPassword] = useState('');
-    const [resetStep, setResetStep] = useState<'idle' | 'request' | 'reset'>('idle');
-    const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+    const [resetStep, setResetStep] = useState<'idle' | 'request' | 'reset'>("reset");
     const [passwordError, setPasswordError] = useState('');
 
     const onSubmit = async (data: ProfileType) => {
@@ -65,52 +62,38 @@ export function Profile() {
         toast.success("Профиль успешно сохранен");
     };
 
-    const handleRequestPasswordReset = async (e: React.FormEvent) => {
+    const handleRequestPasswordReset = async (e: FormEvent) => {
         e.preventDefault();
-        setMessage(null);
 
         try {
-            // Mock API call to POST /password-reset-requests
-            const response = await fetch('/api/password-reset-requests', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ email: resetEmail }),
-            });
+            const res = await passowrdResetReq(profile?.email || '');
 
-            if (response.ok) {
-                setMessage({
-                    type: 'success',
-                    text: 'Ссылка для сброса пароля отправлена на email',
-                });
-                setResetStep('reset');
-            } else {
+            if (res.status !== HttpStatusCode.Ok) {
+                toast.error('Произошла ошибка при отправке ссылки для сброса пароля');
                 throw new Error('Failed to request password reset');
             }
-        } catch (error) {
-            // Mock success for demo
-            console.log('Password reset requested for:', resetEmail);
-            setMessage({
-                type: 'success',
-                text: 'Ссылка для сброса пароля отправлена на email',
-            });
+
+            toast.success('Ссылка для сброса пароля отправлена на email');
             setResetStep('reset');
+
+        } catch (error) {
+            toast.error('Произошла ошибка при отправке ссылки для сброса пароля, проверьте адрес электронной почты и попробуйте снова');
         }
     };
 
     const validatePassword = (password: string): string | null => {
-        if (password.length < 6 || password.length > 100) {
-            return 'Пароль должен быть от 6 до 100 символов';
-        }
+        if (password.length < 8 || password.length > 100)
+            return 'Пароль должен быть от 8 до 100 символов';
+
         const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@#$%^&+=]).{8,}$/;
-        if (!passwordRegex.test(password)) {
+        if (!passwordRegex.test(password))
             return 'Пароль должен содержать минимум одну заглавную букву, одну строчную букву, одну цифру и один специальный символ';
-        }
+
         return null;
     };
 
     const handleResetPassword = async (e: React.FormEvent) => {
         e.preventDefault();
-        setMessage(null);
         setPasswordError('');
 
         if (newPassword !== confirmPassword) {
@@ -125,35 +108,18 @@ export function Profile() {
         }
 
         try {
-            // Mock API call to PATCH /passwords
-            const response = await fetch('/api/passwords', {
-                method: 'PATCH',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    token: resetToken,
-                    newPassword: newPassword,
-                }),
-            });
+            const res = await resetPassword(resetToken, newPassword);
 
-            if (response.ok) {
-                setMessage({ type: 'success', text: 'Пароль успешно изменен' });
-                setResetStep('idle');
-                setResetEmail('');
-                setResetToken('');
-                setNewPassword('');
-                setConfirmPassword('');
-            } else {
+            if (res.status !== HttpStatusCode.Ok)
                 throw new Error('Failed to reset password');
-            }
-        } catch (error) {
-            // Mock success for demo
-            console.log('Password reset with token:', resetToken, 'New password:', newPassword);
-            setMessage({ type: 'success', text: 'Пароль успешно изменен' });
+
+            toast.success('Пароль успешно изменен');
             setResetStep('idle');
-            setResetEmail('');
             setResetToken('');
             setNewPassword('');
             setConfirmPassword('');
+        } catch (error) {
+            toast.error('Произошла ошибка при сбросе пароля. Проверьте токен и попробуйте снова');
         }
     };
 
@@ -290,22 +256,26 @@ export function Profile() {
                                     Текущий пароль
                                 </label>
                                 <div className="relative">
-                                    <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                                    <input
-                                        type="password"
-                                        value={currentPassword}
-                                        disabled
-                                        className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg bg-gray-50 text-gray-500"
-                                    />
+                                    <InputGroup>
+                                        <InputGroupAddon>
+                                            <Lock />
+                                        </InputGroupAddon>
+                                        <InputGroupInput
+                                            type="password"
+                                            value={'***********'}
+                                            disabled
+                                        />
+                                    </InputGroup>
                                 </div>
                             </div>
 
-                            <button
+                            <Button
                                 onClick={() => setResetStep('request')}
-                                className="w-full px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                                size="lg"
+                                className="w-full"
                             >
                                 Сбросить пароль
-                            </button>
+                            </Button>
                         </div>
                     )}
 
@@ -318,32 +288,37 @@ export function Profile() {
                             <div>
                                 <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
                                 <div className="relative">
-                                    <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                                    <input
-                                        type="email"
-                                        required
-                                        value={resetEmail}
-                                        onChange={(e) => setResetEmail(e.target.value)}
-                                        className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                        placeholder="your.email@university.edu"
-                                    />
+                                    <InputGroup>
+                                        <InputGroupAddon>
+                                            <Mail />
+                                        </InputGroupAddon>
+                                        <InputGroupInput
+                                            type="email"
+                                            required
+                                            value={(profile ? profile.email : '')}
+                                            disabled
+                                            placeholder="your.email@university.edu"
+                                        />
+                                    </InputGroup>
                                 </div>
                             </div>
 
                             <div className="flex items-center gap-3">
-                                <button
-                                    type="button"
+                                <Button
+                                    variant="outline"
+                                    size="lg"
                                     onClick={() => setResetStep('idle')}
-                                    className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+                                    className="flex-1"
                                 >
                                     Отмена
-                                </button>
-                                <button
+                                </Button>
+                                <Button
+                                    size="lg"
                                     type="submit"
-                                    className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                                    className="flex-1"
                                 >
                                     Отправить ссылку
-                                </button>
+                                </Button>
                             </div>
                         </form>
                     )}
@@ -358,12 +333,10 @@ export function Profile() {
                                 <label className="block text-sm font-medium text-gray-700 mb-1">
                                     Токен сброса
                                 </label>
-                                <input
-                                    type="text"
+                                <Input
                                     required
                                     value={resetToken}
                                     onChange={(e) => setResetToken(e.target.value)}
-                                    className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
                                     placeholder="Введите токен из email"
                                 />
                             </div>
@@ -373,15 +346,18 @@ export function Profile() {
                                     Новый пароль
                                 </label>
                                 <div className="relative">
-                                    <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                                    <input
-                                        type="password"
-                                        required
-                                        value={newPassword}
-                                        onChange={(e) => setNewPassword(e.target.value)}
-                                        className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                        placeholder="Введите новый пароль"
-                                    />
+                                    <InputGroup>
+                                        <InputGroupAddon>
+                                            <Lock />
+                                        </InputGroupAddon>
+                                        <InputGroupInput
+                                            type="password"
+                                            required
+                                            value={newPassword}
+                                            onChange={(e) => setNewPassword(e.target.value)}
+                                            placeholder="Введите новый пароль"
+                                        />
+                                    </InputGroup>
                                 </div>
                                 <p className="text-xs text-gray-500 mt-1">
                                     Минимум 8 символов, включая заглавные, строчные буквы, цифры и спецсимволы
@@ -393,15 +369,18 @@ export function Profile() {
                                     Подтвердите новый пароль
                                 </label>
                                 <div className="relative">
-                                    <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-                                    <input
-                                        type="password"
-                                        required
-                                        value={confirmPassword}
-                                        onChange={(e) => setConfirmPassword(e.target.value)}
-                                        className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                        placeholder="Повторите новый пароль"
-                                    />
+                                    <InputGroup>
+                                        <InputGroupAddon>
+                                            <Lock />
+                                        </InputGroupAddon>
+                                        <InputGroupInput
+                                            type="password"
+                                            required
+                                            value={confirmPassword}
+                                            onChange={(e) => setConfirmPassword(e.target.value)}
+                                            placeholder="Повторите новый пароль"
+                                        />
+                                    </InputGroup>
                                 </div>
                             </div>
 
@@ -412,35 +391,34 @@ export function Profile() {
                             )}
 
                             <div className="flex items-center gap-3">
-                                <button
-                                    type="button"
+                                <Button
+                                    size="lg"
+                                    variant="outline"
                                     onClick={() => {
                                         setResetStep('idle');
-                                        setResetEmail('');
                                         setResetToken('');
                                         setNewPassword('');
                                         setConfirmPassword('');
                                         setPasswordError('');
                                     }}
-                                    className="flex-1 px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 transition-colors"
+                                    className="flex-1"
                                 >
                                     Отмена
-                                </button>
-                                <button
+                                </Button>
+                                <Button
                                     type="submit"
-                                    className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                                    className="flex-1"
                                 >
                                     Сбросить пароль
-                                </button>
+                                </Button>
                             </div>
                         </form>
                     )}
 
-                    {/* Password requirements info */}
                     <div className="mt-6 p-4 bg-gray-50 rounded-lg">
                         <h3 className="text-sm font-medium text-gray-700 mb-2">Требования к паролю:</h3>
                         <ul className="text-xs text-gray-600 space-y-1">
-                            <li>• От 6 до 100 символов</li>
+                            <li>• От 8 до 100 символов</li>
                             <li>• Минимум одна заглавная буква (A-Z)</li>
                             <li>• Минимум одна строчная буква (a-z)</li>
                             <li>• Минимум одна цифра (0-9)</li>
