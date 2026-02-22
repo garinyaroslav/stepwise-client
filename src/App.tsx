@@ -1,22 +1,23 @@
-import { lazy, Suspense } from "react";
-import { BrowserRouter, Routes, Route, Navigate } from "react-router";
 import { QueryClientProvider } from "@tanstack/react-query";
-import { UserRole } from "./types/auth/UserRole";
-import { queryClient } from "./queryClient";
-import { useAuthStore } from "./stores/authStore";
-import { Unauthorized } from "./pages/general/Unauthorized";
-import { UserManagement } from "./pages/admin/UserManagement";
-import { GroupsManagement } from "./pages/admin/GroupsManagement";
-import { Toaster } from "./components/ui/sonner";
-import { ProjectManagement } from "./pages/admin/ProjectManagement";
+import { lazy, Suspense } from "react";
+import { BrowserRouter, Navigate, Route, Routes } from "react-router";
 import { ProjectAddForm } from "./components/admin/ProjectAddForm";
 import { ProjectDetailsForm } from "./components/admin/ProjectDitailsForm";
 import { LoadingFallback } from "./components/general/LoadingFallback";
 import { ProtectedRoute } from "./components/general/ProtectedRoute";
 import { CreateWorkModal } from "./components/teacher/CreateWorkModal";
+import { Toaster } from "./components/ui/sonner";
+import { GroupsManagement } from "./pages/admin/GroupsManagement";
+import { ProjectManagement } from "./pages/admin/ProjectManagement";
+import { UserManagement } from "./pages/admin/UserManagement";
+import { Profile } from "./pages/general/Profile";
+import { ResetPassword } from "./pages/general/ResetPassword";
+import { Unauthorized } from "./pages/general/Unauthorized";
 import { StudentWorksView } from "./pages/student/StudentWorksView";
 import { TemplatesManagement } from "./pages/student/TemplatesManagement";
-import { Profile } from "./pages/general/Profile";
+import { queryClient } from "./queryClient";
+import { useAuthStore } from "./stores/authStore";
+import { UserRole } from "./types/auth/UserRole";
 
 const Login = lazy(() => import("./pages/general/Login"));
 const AdminDashboard = lazy(() => import("./pages/admin/AdminDashboard"));
@@ -40,6 +41,10 @@ function AppContent() {
                 path="/login"
                 element={!isAuthenticated ? <Login /> : <Navigate to="/dashboard" />}
             />
+            <Route path="/reset" element={<ResetPassword />} />
+            <Route path="/unauthorized" element={<Unauthorized />} />
+            <Route path="*" element={<Navigate to="/login" />} />
+
             <Route
                 path="/dashboard"
                 element={
@@ -88,9 +93,6 @@ function AppContent() {
                     </ProtectedRoute>
                 }
             />
-
-            <Route path="/unauthorized" element={<Unauthorized />} />
-            <Route path="*" element={<Navigate to="/login" />} />
         </Routes>
     );
 }

@@ -14,14 +14,16 @@ import { Input } from "@/components/ui/input";
 import { loginScheme } from "@/schemes/loginScheme";
 import type z from "zod";
 import { useLogin } from "@/hooks/useLogin";
+import { useNavigate } from "react-router";
 
 const Login = () => {
     const mutation = useLogin();
+    const navigate = useNavigate();
 
     const form = useForm<z.infer<typeof loginScheme>>({
         resolver: zodResolver(loginScheme),
         defaultValues: {
-            username: "admin",
+            username: "teacher",
             password: "Qq@123456",
         },
     });
@@ -101,9 +103,9 @@ const Login = () => {
 
                             <div className="flex items-center justify-between">
                                 <div className="flex items-center"></div>
-                                {/* <Button variant="link" size="sm" className="p-0"> */}
-                                {/*   Забыли пароль? */}
-                                {/* </Button> */}
+                                <Button variant="link" onClick={() => navigate("/reset")} size="sm" className="p-0">
+                                    Забыли пароль?
+                                </Button>
                             </div>
                             <Button
                                 type="submit"

@@ -291,7 +291,7 @@ export const updateMyProfile = async (
     profileObj: ProfileDto
 ): Promise<AxiosResponse<UserWithProfile>> => await axios.put("/user/profile", profileObj);
 
-export const passowrdResetReq = async (email: string) =>
+export const passwordResetReq = async (email: string) =>
     await axios.post("/auth/password-reset-requests", null, {
         params: {
             email
