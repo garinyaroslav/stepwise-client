@@ -1,6 +1,27 @@
-import { useState } from 'react';
-import { X, Plus, Trash2, Calendar } from 'lucide-react';
-import { WorkTemplate, WorkTemplateChapter } from './TemplatesManagement';
+import { X, Plus } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from '@/components/ui/select';
+import {
+    Form,
+    FormControl,
+    FormField,
+    FormItem,
+    FormLabel,
+    FormMessage,
+} from '@/components/ui/form';
+import { useForm, useFieldArray } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { templateFormSchema, TemplateFormValues } from '@/schemes/templateFormSchema';
+import { WorkTemplate } from '@/pages/student/TemplatesManagement';
+import { TemplateChaptersList } from './TemplateChaptersList';
 
 type TemplateModalProps = {
     template: WorkTemplate | null;
@@ -9,264 +30,203 @@ type TemplateModalProps = {
 };
 
 export function TemplateModal({ template, onClose, onSave }: TemplateModalProps) {
-    const [formData, setFormData] = useState<Omit<WorkTemplate, 'id' | 'createdAt'>>({
-        templateTitle: template?.templateTitle || '',
-        templateDescription: template?.templateDescription || '',
-        workTitle: template?.workTitle || '',
-        workDescription: template?.workDescription || '',
-        type: template?.type || '',
-        workTemplateChapters: template?.workTemplateChapters || [],
+    const form = useForm<TemplateFormValues>({
+        resolver: zodResolver(templateFormSchema),
+        defaultValues: {
+            templateTitle: template?.templateTitle ?? '',
+            templateDescription: template?.templateDescription ?? '',
+            workTitle: template?.workTitle ?? '',
+            workDescription: template?.workDescription ?? '',
+            type: template?.type ?? '',
+            workTemplateChapters: template?.workTemplateChapters.map((ch) => ({
+                title: ch.title,
+                description: ch.description,
+                deadline: ch.deadline,
+            })) ?? [{ title: '', description: '', deadline: '' }],
+        },
+    });
+
+    const { fields, append, remove, move } = useFieldArray({
+        control: form.control,
+        name: 'workTemplateChapters',
     });
 
     const handleAddChapter = () => {
-        setFormData({
-            ...formData,
-            workTemplateChapters: [
-                ...formData.workTemplateChapters,
-                {
-                    id: `ch${Date.now()}`,
-                    title: '',
-                    description: '',
-                    deadline: '',
-                },
-            ],
-        });
+        append({ title: '', description: '', deadline: '' });
     };
 
-    const handleRemoveChapter = (id: string) => {
-        setFormData({
-            ...formData,
-            workTemplateChapters: formData.workTemplateChapters.filter((ch) => ch.id !== id),
-        });
-    };
+    const onSubmit = (data: TemplateFormValues) => {
+        const chapters = data.workTemplateChapters.map((ch, i) => ({
+            id: template?.workTemplateChapters[i]?.id ?? `ch${Date.now()}_${i}`,
+            ...ch,
+        }));
 
-    const handleChapterChange = (id: string, field: keyof WorkTemplateChapter, value: string) => {
-        setFormData({
-            ...formData,
-            workTemplateChapters: formData.workTemplateChapters.map((ch) =>
-                ch.id === id ? { ...ch, [field]: value } : ch
-            ),
+        onSave({
+            id: template?.id ?? Date.now().toString(),
+            createdAt: template?.createdAt ?? new Date().toISOString(),
+            ...data,
+            workTemplateChapters: chapters,
         });
-    };
-
-    const handleSubmit = (e: React.FormEvent) => {
-        e.preventDefault();
-        if (template) {
-            onSave({ ...template, ...formData });
-        } else {
-            onSave({
-                id: Date.now().toString(),
-                createdAt: new Date().toISOString(),
-                ...formData,
-            });
-        }
     };
 
     return (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-            <div className="bg-white rounded-lg max-w-3xl w-full max-h-[90vh] overflow-hidden flex flex-col">
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+            <div className="bg-card text-card-foreground rounded-lg max-w-3xl w-full max-h-[90vh] overflow-hidden flex flex-col">
                 {/* Header */}
-                <div className="flex items-center justify-between p-6 border-b border-gray-200">
+                <div className="flex items-center justify-between p-6 border-b border-border">
                     <h2 className="text-xl font-semibold">
                         {template ? 'Редактировать шаблон' : 'Создать новый шаблон'}
                     </h2>
-                    <button
-                        onClick={onClose}
-                        className="p-2 hover:bg-gray-100 rounded-lg transition-colors"
-                    >
+                    <Button variant="ghost" size="icon" onClick={onClose}>
                         <X className="w-5 h-5" />
-                    </button>
+                    </Button>
                 </div>
 
                 {/* Form */}
-                <form onSubmit={handleSubmit} className="flex-1 overflow-y-auto">
-                    <div className="p-6 space-y-6">
-                        {/* Template Info */}
-                        <div>
-                            <h3 className="font-semibold mb-4">Информация о шаблоне</h3>
-                            <div className="space-y-4">
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                                        Название шаблона *
-                                    </label>
-                                    <input
-                                        type="text"
-                                        required
-                                        value={formData.templateTitle}
-                                        onChange={(e) => setFormData({ ...formData, templateTitle: e.target.value })}
-                                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                        placeholder="Например: Шаблон курсовой работы"
+                <Form {...form}>
+                    <form onSubmit={form.handleSubmit(onSubmit)} className="flex-1 overflow-y-auto flex flex-col">
+                        <div className="p-6 space-y-6 flex-1">
+                            {/* Template Info */}
+                            <div>
+                                <h3 className="font-semibold mb-4">Информация о шаблоне</h3>
+                                <div className="space-y-4">
+                                    <FormField
+                                        control={form.control}
+                                        name="templateTitle"
+                                        render={({ field }) => (
+                                            <FormItem>
+                                                <FormLabel>Название шаблона *</FormLabel>
+                                                <FormControl>
+                                                    <Input placeholder="Например: Шаблон курсовой работы" {...field} />
+                                                </FormControl>
+                                                <FormMessage />
+                                            </FormItem>
+                                        )}
                                     />
-                                </div>
 
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                                        Описание шаблона *
-                                    </label>
-                                    <textarea
-                                        required
-                                        value={formData.templateDescription}
-                                        onChange={(e) =>
-                                            setFormData({ ...formData, templateDescription: e.target.value })
-                                        }
-                                        rows={3}
-                                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                        placeholder="Краткое описание назначения шаблона"
+                                    <FormField
+                                        control={form.control}
+                                        name="templateDescription"
+                                        render={({ field }) => (
+                                            <FormItem>
+                                                <FormLabel>Описание шаблона *</FormLabel>
+                                                <FormControl>
+                                                    <Textarea
+                                                        placeholder="Краткое описание назначения шаблона"
+                                                        rows={3}
+                                                        {...field}
+                                                    />
+                                                </FormControl>
+                                                <FormMessage />
+                                            </FormItem>
+                                        )}
                                     />
-                                </div>
 
-                                <div className="grid grid-cols-2 gap-4">
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                                            Название работы *
-                                        </label>
-                                        <input
-                                            type="text"
-                                            required
-                                            value={formData.workTitle}
-                                            onChange={(e) => setFormData({ ...formData, workTitle: e.target.value })}
-                                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                            placeholder="Курсовая работа"
+                                    <div className="grid grid-cols-2 gap-4">
+                                        <FormField
+                                            control={form.control}
+                                            name="workTitle"
+                                            render={({ field }) => (
+                                                <FormItem>
+                                                    <FormLabel>Название работы *</FormLabel>
+                                                    <FormControl>
+                                                        <Input placeholder="Курсовая работа" {...field} />
+                                                    </FormControl>
+                                                    <FormMessage />
+                                                </FormItem>
+                                            )}
+                                        />
+
+                                        <FormField
+                                            control={form.control}
+                                            name="type"
+                                            render={({ field }) => (
+                                                <FormItem>
+                                                    <FormLabel>Тип работы *</FormLabel>
+                                                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                                        <FormControl>
+                                                            <SelectTrigger>
+                                                                <SelectValue placeholder="Выберите тип" />
+                                                            </SelectTrigger>
+                                                        </FormControl>
+                                                        <SelectContent>
+                                                            <SelectItem value="Курсовая работа">Курсовая работа</SelectItem>
+                                                            <SelectItem value="Дипломная работа">Дипломная работа</SelectItem>
+                                                            <SelectItem value="Научная работа">Научная работа</SelectItem>
+                                                            <SelectItem value="Лабораторная работа">Лабораторная работа</SelectItem>
+                                                            <SelectItem value="Диссертация">Диссертация</SelectItem>
+                                                            <SelectItem value="Проектная работа">Проектная работа</SelectItem>
+                                                        </SelectContent>
+                                                    </Select>
+                                                    <FormMessage />
+                                                </FormItem>
+                                            )}
                                         />
                                     </div>
 
-                                    <div>
-                                        <label className="block text-sm font-medium text-gray-700 mb-1">
-                                            Тип работы *
-                                        </label>
-                                        <select
-                                            required
-                                            value={formData.type}
-                                            onChange={(e) => setFormData({ ...formData, type: e.target.value })}
-                                            className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                        >
-                                            <option value="">Выберите тип</option>
-                                            <option value="Курсовая работа">Курсовая работа</option>
-                                            <option value="Дипломная работа">Дипломная работа</option>
-                                            <option value="Научная работа">Научная работа</option>
-                                            <option value="Лабораторная работа">Лабораторная работа</option>
-                                            <option value="Диссертация">Диссертация</option>
-                                            <option value="Проектная работа">Проектная работа</option>
-                                        </select>
-                                    </div>
-                                </div>
-
-                                <div>
-                                    <label className="block text-sm font-medium text-gray-700 mb-1">
-                                        Описание работы *
-                                    </label>
-                                    <textarea
-                                        required
-                                        value={formData.workDescription}
-                                        onChange={(e) => setFormData({ ...formData, workDescription: e.target.value })}
-                                        rows={2}
-                                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                        placeholder="Описание академической работы"
+                                    <FormField
+                                        control={form.control}
+                                        name="workDescription"
+                                        render={({ field }) => (
+                                            <FormItem>
+                                                <FormLabel>Описание работы *</FormLabel>
+                                                <FormControl>
+                                                    <Textarea
+                                                        placeholder="Описание академической работы"
+                                                        rows={2}
+                                                        {...field}
+                                                    />
+                                                </FormControl>
+                                                <FormMessage />
+                                            </FormItem>
+                                        )}
                                     />
                                 </div>
                             </div>
-                        </div>
 
-                        {/* Chapters */}
-                        <div>
-                            <div className="flex items-center justify-between mb-4">
-                                <h3 className="font-semibold">Разделы пояснительной записки</h3>
-                                <button
-                                    type="button"
-                                    onClick={handleAddChapter}
-                                    className="flex items-center gap-2 px-3 py-1.5 text-sm bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-                                >
-                                    <Plus className="w-4 h-4" />
-                                    Добавить раздел
-                                </button>
+                            {/* Chapters */}
+                            <div>
+                                <div className="flex items-center justify-between mb-4">
+                                    <h3 className="font-semibold">Разделы пояснительной записки</h3>
+                                    <Button type="button" size="sm" onClick={handleAddChapter}>
+                                        <Plus className="w-4 h-4" />
+                                        Добавить раздел
+                                    </Button>
+                                </div>
+
+                                {fields.length === 0 ? (
+                                    <div className="p-8 text-center text-muted-foreground border-2 border-dashed border-border rounded-lg">
+                                        Нет разделов. Добавьте первый раздел.
+                                    </div>
+                                ) : (
+                                    <TemplateChaptersList
+                                        fields={fields}
+                                        form={form}
+                                        onRemove={remove}
+                                        onMove={move}
+                                    />
+                                )}
+
+                                {form.formState.errors.workTemplateChapters && (
+                                    <p className="text-sm font-medium text-destructive mt-2">
+                                        {form.formState.errors.workTemplateChapters.message}
+                                    </p>
+                                )}
                             </div>
-
-                            {formData.workTemplateChapters.length === 0 ? (
-                                <div className="p-8 text-center text-gray-500 border-2 border-dashed border-gray-300 rounded-lg">
-                                    Нет разделов. Добавьте первый раздел.
-                                </div>
-                            ) : (
-                                <div className="space-y-4">
-                                    {formData.workTemplateChapters.map((chapter, index) => (
-                                        <div key={chapter.id} className="p-4 border border-gray-200 rounded-lg space-y-3">
-                                            <div className="flex items-start justify-between gap-4">
-                                                <div className="flex-1 space-y-3">
-                                                    <div className="flex items-center gap-3">
-                                                        <span className="flex items-center justify-center w-6 h-6 bg-blue-100 text-blue-600 rounded-full text-sm font-medium">
-                                                            {index + 1}
-                                                        </span>
-                                                        <input
-                                                            type="text"
-                                                            required
-                                                            value={chapter.title}
-                                                            onChange={(e) =>
-                                                                handleChapterChange(chapter.id, 'title', e.target.value)
-                                                            }
-                                                            className="flex-1 px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                                            placeholder="Название раздела"
-                                                        />
-                                                    </div>
-
-                                                    <textarea
-                                                        required
-                                                        value={chapter.description}
-                                                        onChange={(e) =>
-                                                            handleChapterChange(chapter.id, 'description', e.target.value)
-                                                        }
-                                                        rows={2}
-                                                        className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
-                                                        placeholder="Описание содержания раздела"
-                                                    />
-
-                                                    <div className="flex items-center gap-2">
-                                                        <Calendar className="w-4 h-4 text-gray-400" />
-                                                        <label className="text-sm text-gray-600">Срок сдачи:</label>
-                                                        <input
-                                                            type="date"
-                                                            required
-                                                            value={chapter.deadline}
-                                                            onChange={(e) =>
-                                                                handleChapterChange(chapter.id, 'deadline', e.target.value)
-                                                            }
-                                                            className="px-3 py-1.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
-                                                        />
-                                                    </div>
-                                                </div>
-
-                                                <button
-                                                    type="button"
-                                                    onClick={() => handleRemoveChapter(chapter.id)}
-                                                    className="p-2 hover:bg-red-100 rounded-lg transition-colors"
-                                                >
-                                                    <Trash2 className="w-5 h-5 text-red-600" />
-                                                </button>
-                                            </div>
-                                        </div>
-                                    ))}
-                                </div>
-                            )}
                         </div>
-                    </div>
 
-                    {/* Footer */}
-                    <div className="flex items-center justify-end gap-3 p-6 border-t border-gray-200 bg-gray-50">
-                        <button
-                            type="button"
-                            onClick={onClose}
-                            className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-100 transition-colors"
-                        >
-                            Отмена
-                        </button>
-                        <button
-                            type="submit"
-                            className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
-                        >
-                            {template ? 'Сохранить изменения' : 'Создать шаблон'}
-                        </button>
-                    </div>
-                </form>
+                        {/* Footer */}
+                        <div className="flex items-center justify-end gap-3 p-6 border-t border-border bg-muted">
+                            <Button type="button" variant="outline" onClick={onClose}>
+                                Отмена
+                            </Button>
+                            <Button type="submit">
+                                {template ? 'Сохранить изменения' : 'Создать шаблон'}
+                            </Button>
+                        </div>
+                    </form>
+                </Form>
             </div>
         </div>
     );
 }
-
