@@ -103,7 +103,7 @@ const Login = () => {
 
                             <div className="flex items-center justify-between">
                                 <div className="flex items-center"></div>
-                                <Button variant="link" onClick={() => navigate("/reset")} size="sm" className="p-0">
+                                <Button type="button" variant="link" onClick={() => navigate("/reset")} size="sm" className="p-0">
                                     Забыли пароль?
                                 </Button>
                             </div>

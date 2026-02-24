@@ -70,9 +70,10 @@ export function TemplateModal({ template, onClose, onSave }: TemplateModalProps)
     };
 
     return (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-            <div className="bg-card text-card-foreground rounded-lg max-w-3xl w-full max-h-[90vh] overflow-hidden flex flex-col">
-                {/* Header */}
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center overflow-y-auto z-50 p-4">
+            {/* <div className="bg-card text-card-foreground rounded-lg max-w-3xl w-full max-h-[90vh] overflow-hidden flex flex-col"> */}
+            <div className="bg-card text-card-foreground rounded-lg max-w-3xl w-full flex flex-col">
+
                 <div className="flex items-center justify-between p-6 border-b border-border">
                     <h2 className="text-xl font-semibold">
                         {template ? 'Редактировать шаблон' : 'Создать новый шаблон'}
@@ -82,11 +83,10 @@ export function TemplateModal({ template, onClose, onSave }: TemplateModalProps)
                     </Button>
                 </div>
 
-                {/* Form */}
                 <Form {...form}>
-                    <form onSubmit={form.handleSubmit(onSubmit)} className="flex-1 overflow-y-auto flex flex-col">
+                    {/* <form onSubmit={form.handleSubmit(onSubmit)} className="flex-1 overflow-y-auto flex flex-col"> */}
+                    <form onSubmit={form.handleSubmit(onSubmit)} className="flex-1 flex flex-col">
                         <div className="p-6 space-y-6 flex-1">
-                            {/* Template Info */}
                             <div>
                                 <h3 className="font-semibold mb-4">Информация о шаблоне</h3>
                                 <div className="space-y-4">
@@ -184,7 +184,6 @@ export function TemplateModal({ template, onClose, onSave }: TemplateModalProps)
                                 </div>
                             </div>
 
-                            {/* Chapters */}
                             <div>
                                 <div className="flex items-center justify-between mb-4">
                                     <h3 className="font-semibold">Разделы пояснительной записки</h3>
@@ -215,7 +214,6 @@ export function TemplateModal({ template, onClose, onSave }: TemplateModalProps)
                             </div>
                         </div>
 
-                        {/* Footer */}
                         <div className="flex items-center justify-end gap-3 p-6 border-t border-border bg-muted">
                             <Button type="button" variant="outline" onClick={onClose}>
                                 Отмена
