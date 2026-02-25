@@ -13,6 +13,7 @@ import { GroupResponse, Pageiable, UserCreateResponse } from "./resTypes";
 import { UserWithProfile } from "@/types/UserWithProfile";
 import { AcademicProject } from "@/types/AcademicProject";
 import { ProfileDto } from "@/types/Profile";
+import { WorkTemplate } from "@/types/WorkTemplate";
 
 export const loginReq = async (credentials: Credentials) => {
     const response = await axios.post("/auth/sessions", credentials);
@@ -301,3 +302,15 @@ export const passwordResetReq = async (email: string) =>
 export const resetPassword = async (token: string, newPassword: string) =>
     await axios.patch("/auth/passwords", { token, newPassword });
 
+export const getMyTemplates = async (pageNumber: number, search: string) => {
+    try {
+        const res = await axios.get<Pageiable<WorkTemplate>>("/template", { params: { pageNumber } });
+
+        if (res.status !== HttpStatusCode.Ok)
+            throw new Error("Error while getting templates");
+
+        return res.data;
+    } catch (error) {
+        throw error instanceof Error ? error : new Error("Network error");
+    }
+}

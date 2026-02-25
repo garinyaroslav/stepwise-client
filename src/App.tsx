@@ -5,7 +5,7 @@ import { ProjectAddForm } from "./components/admin/ProjectAddForm";
 import { ProjectDetailsForm } from "./components/admin/ProjectDitailsForm";
 import { LoadingFallback } from "./components/general/LoadingFallback";
 import { ProtectedRoute } from "./components/general/ProtectedRoute";
-import { CreateWorkModal } from "./components/teacher/CreateWorkModal";
+import { CreateWorkPage } from "./components/teacher/CreateWorkPage";
 import { Toaster } from "./components/ui/sonner";
 import { GroupsManagement } from "./pages/admin/GroupsManagement";
 import { ProjectManagement } from "./pages/admin/ProjectManagement";
@@ -81,7 +81,7 @@ function AppContent() {
                 }
             >
                 <Route path="" element={<StudentWorksView />} />
-                <Route path="create-work" element={<CreateWorkModal />} />
+                <Route path="create-work" element={<CreateWorkPage />} />
                 <Route path="templates" element={<TemplatesManagement />} />
                 <Route path="profile" element={<Profile />} />
             </Route>

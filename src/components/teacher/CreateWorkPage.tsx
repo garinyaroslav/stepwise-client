@@ -1,6 +1,6 @@
 import { FileText } from 'lucide-react';
 
-export function CreateWorkModal() {
+export function CreateWorkPage() {
     return (
         <div>
             <div className="mb-8">
