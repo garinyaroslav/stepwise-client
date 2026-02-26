@@ -314,3 +314,16 @@ export const getMyTemplates = async (pageNumber: number, search: string) => {
         throw error instanceof Error ? error : new Error("Network error");
     }
 }
+
+export const getTemplate = async (id: number) => {
+    try {
+        const res = await axios.get<WorkTemplate>(`/template/${id}`);
+
+        if (res.status !== HttpStatusCode.Ok)
+            throw new Error("Error while getting template");
+
+        return res.data;
+    } catch (error) {
+        throw error instanceof Error ? error : new Error("Network error");
+    }
+}

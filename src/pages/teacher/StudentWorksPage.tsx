@@ -1,6 +1,6 @@
 import { Users } from 'lucide-react';
 
-export function StudentWorksView() {
+export function StudentWorksPage() {
     return (
         <div>
             <div className="mb-8">

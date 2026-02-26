@@ -6,8 +6,10 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { WorkTemplate } from '@/types/WorkTemplate';
 import { useTemplates } from '@/hooks/useTemplates';
+import { useNavigate } from 'react-router';
 
 export function TemplatesManagement() {
+    const navigate = useNavigate();
     const { templates, totalPages } = useTemplates(0, '');
     // const [templates, setTemplates] = useState<WorkTemplate[]>(mockTemplates);
     const [searchQuery, setSearchQuery] = useState('');
@@ -44,7 +46,7 @@ export function TemplatesManagement() {
         return (
             <div className="divide-y divide-border">
                 {templates.map((template) => (
-                    <div key={template.id} className="p-6 hover:bg-muted transition-colors">
+                    <div key={template.id} onClick={() => navigate(`${template.id}`)} className="p-6 hover:bg-muted transition-colors cursor-pointer">
                         <div className="flex items-center justify-between gap-4">
                             <div className="flex-1">
                                 <div className="flex items-center gap-3 mb-2">
@@ -59,15 +61,6 @@ export function TemplatesManagement() {
                                     <span>Создан: {new Date(template.createdAt).toLocaleDateString('ru-RU')}</span>
                                 </div>
                             </div>
-                            {/* <div className="h-max flex items-center justify-center gap-1"> */}
-                            {/* <Button */}
-                            {/*     variant="ghost" */}
-                            {/*     size="icon" */}
-                            {/*     onClick={() => setViewingTemplate(template)} */}
-                            {/*     title="Просмотр" */}
-                            {/* > */}
-                            {/*     <Eye className="w-5 h-5" /> */}
-                            {/* </Button> */}
                             <Button
                                 variant="ghost"
                                 size="icon"
@@ -77,7 +70,6 @@ export function TemplatesManagement() {
                             >
                                 <Trash2 className="w-5 h-5" />
                             </Button>
-                            {/* </div> */}
                         </div>
                     </div>
                 ))

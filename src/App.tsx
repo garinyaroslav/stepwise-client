@@ -13,11 +13,12 @@ import { UserManagement } from "./pages/admin/UserManagement";
 import { Profile } from "./pages/general/Profile";
 import { ResetPassword } from "./pages/general/ResetPassword";
 import { Unauthorized } from "./pages/general/Unauthorized";
-import { StudentWorksView } from "./pages/student/StudentWorksView";
-import { TemplatesManagement } from "./pages/student/TemplatesManagement";
 import { queryClient } from "./queryClient";
 import { useAuthStore } from "./stores/authStore";
 import { UserRole } from "./types/auth/UserRole";
+import { TemplatesManagement } from "./pages/teacher/TemplatesManagement";
+import { StudentWorksPage } from "./pages/teacher/StudentWorksPage";
+import { TemplateDetailPage } from "./pages/teacher/TemplateDetailPage";
 
 const Login = lazy(() => import("./pages/general/Login"));
 const AdminDashboard = lazy(() => import("./pages/admin/AdminDashboard"));
@@ -80,9 +81,11 @@ function AppContent() {
                     </ProtectedRoute>
                 }
             >
-                <Route path="" element={<StudentWorksView />} />
+                <Route path="" element={<StudentWorksPage />} />
                 <Route path="create-work" element={<CreateWorkPage />} />
-                <Route path="templates" element={<TemplatesManagement />} />
+                <Route path="template" element={<TemplatesManagement />} />
+                <Route path="template/:id" element={<TemplateDetailPage />} />
+                {/* <Route path="new" element={<Template />} /> */}
                 <Route path="profile" element={<Profile />} />
             </Route>
             <Route

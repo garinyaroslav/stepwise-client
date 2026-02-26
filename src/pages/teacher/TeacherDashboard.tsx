@@ -7,7 +7,7 @@ const TeacherDashboard = () => {
 
     const topbarItems = [
         { name: 'Работы студентов', onClick: () => navigate("") },
-        { name: 'Управление шаблонами', onClick: () => navigate("templates") },
+        { name: 'Управление шаблонами', onClick: () => navigate("template") },
         { name: 'Создание академической работы', onClick: () => navigate("create-work") },
     ];
 
