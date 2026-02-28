@@ -37,3 +37,14 @@ export interface CreateAcademicProject {
     teacherId: string;
     chapters: ProjectChapter[];
 }
+
+export interface SaveWorkTemplate {
+    id?: string;
+    title: string;
+    description: string;
+    workTitle: string;
+    workDescription: string;
+    type: ProjectType;
+    teacherId: number;
+    chapters: ProjectChapter[];
+}

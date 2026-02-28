@@ -65,7 +65,7 @@ export const TemplateModalChapter: FC<TemplateModalChapterProps> = ({
             <div className="flex-1 space-y-3">
                 <FormField
                     control={form.control}
-                    name={`workTemplateChapters.${index}.title`}
+                    name={`chapters.${index}.title`}
                     render={({ field }) => (
                         <FormItem>
                             <FormControl>
@@ -78,7 +78,7 @@ export const TemplateModalChapter: FC<TemplateModalChapterProps> = ({
 
                 <FormField
                     control={form.control}
-                    name={`workTemplateChapters.${index}.description`}
+                    name={`chapters.${index}.description`}
                     render={({ field }) => (
                         <FormItem>
                             <FormControl>
@@ -95,7 +95,7 @@ export const TemplateModalChapter: FC<TemplateModalChapterProps> = ({
 
                 <FormField
                     control={form.control}
-                    name={`workTemplateChapters.${index}.deadline`}
+                    name={`chapters.${index}.deadline`}
                     render={({ field }) => (
                         <FormItem className="flex items-center gap-2">
                             <CalendarSvg className="w-4 h-4 text-muted-foreground flex-shrink-0" />

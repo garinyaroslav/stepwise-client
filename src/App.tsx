@@ -1,11 +1,12 @@
 import { QueryClientProvider } from "@tanstack/react-query";
 import { lazy, Suspense } from "react";
-import { BrowserRouter, Navigate, Route, Routes } from "react-router";
+import { BrowserRouter, Navigate, Route, Routes, useLocation } from "react-router";
 import { ProjectAddForm } from "./components/admin/ProjectAddForm";
 import { ProjectDetailsForm } from "./components/admin/ProjectDitailsForm";
 import { LoadingFallback } from "./components/general/LoadingFallback";
 import { ProtectedRoute } from "./components/general/ProtectedRoute";
 import { CreateWorkPage } from "./components/teacher/CreateWorkPage";
+import { TemplateModal } from "./components/teacher/TemplateModal";
 import { Toaster } from "./components/ui/sonner";
 import { GroupsManagement } from "./pages/admin/GroupsManagement";
 import { ProjectManagement } from "./pages/admin/ProjectManagement";
@@ -27,76 +28,81 @@ const StudentDashboard = lazy(() => import("./pages/student/StudentDashboard"));
 
 function AppContent() {
     const { isAuthenticated, user } = useAuthStore();
+    const location = useLocation();
 
-    // TODO: on load, check the token validity via Query
-    // useEffect(() => {
-    //     if (token) {
-    //         queryClient.fetchQuery({ queryKey: ['user'], queryFn: validateToken });
-    //     }
-    // }, [token]);
-
+    const backgroundLocation = location.state?.backgroundLocation;
 
     return (
-        <Routes>
-            <Route
-                path="/login"
-                element={!isAuthenticated ? <Login /> : <Navigate to="/dashboard" />}
-            />
-            <Route path="/reset" element={<ResetPassword />} />
-            <Route path="/unauthorized" element={<Unauthorized />} />
-            <Route path="*" element={<Navigate to="/login" />} />
+        <>
+            <Routes location={backgroundLocation ?? location}>
+                <Route
+                    path="/login"
+                    element={!isAuthenticated ? <Login /> : <Navigate to="/dashboard" />}
+                />
+                <Route path="/reset" element={<ResetPassword />} />
+                <Route path="/unauthorized" element={<Unauthorized />} />
+                <Route path="*" element={<Navigate to="/login" />} />
 
-            <Route
-                path="/dashboard"
-                element={
-                    isAuthenticated ? (
-                        <Navigate to={`/${user?.role}/dashboard`} replace />
-                    ) : (
-                        <Navigate to="/login" />
-                    )
-                }
-            />
+                <Route
+                    path="/dashboard"
+                    element={
+                        isAuthenticated ? (
+                            <Navigate to={`/${user?.role}/dashboard`} replace />
+                        ) : (
+                            <Navigate to="/login" />
+                        )
+                    }
+                />
 
-            <Route
-                path="/admin/dashboard"
-                element={
-                    <ProtectedRoute allowedRoles={[UserRole.ADMIN]}>
-                        <AdminDashboard />
-                    </ProtectedRoute>
-                }
-            >
-                <Route path="" element={<UserManagement />} />
-                <Route path="groups" element={<GroupsManagement />} />
-                <Route path="projects">
-                    <Route path="" element={<ProjectManagement />} />
-                    <Route path="add" element={<ProjectAddForm />} />
-                    <Route path=":projectId" element={<ProjectDetailsForm />} />
+                <Route
+                    path="/admin/dashboard"
+                    element={
+                        <ProtectedRoute allowedRoles={[UserRole.ADMIN]}>
+                            <AdminDashboard />
+                        </ProtectedRoute>
+                    }
+                >
+                    <Route path="" element={<UserManagement />} />
+                    <Route path="groups" element={<GroupsManagement />} />
+                    <Route path="projects">
+                        <Route path="" element={<ProjectManagement />} />
+                        <Route path="add" element={<ProjectAddForm />} />
+                        <Route path=":projectId" element={<ProjectDetailsForm />} />
+                    </Route>
                 </Route>
-            </Route>
-            <Route
-                path="/teacher/dashboard"
-                element={
-                    <ProtectedRoute allowedRoles={[UserRole.TEACHER]}>
-                        <TeacherDashboard />
-                    </ProtectedRoute>
-                }
-            >
-                <Route path="" element={<StudentWorksPage />} />
-                <Route path="create-work" element={<CreateWorkPage />} />
-                <Route path="template" element={<TemplatesManagement />} />
-                <Route path="template/:id" element={<TemplateDetailPage />} />
-                {/* <Route path="new" element={<Template />} /> */}
-                <Route path="profile" element={<Profile />} />
-            </Route>
-            <Route
-                path="/student/dashboard"
-                element={
-                    <ProtectedRoute allowedRoles={[UserRole.STUDENT]}>
-                        <StudentDashboard />
-                    </ProtectedRoute>
-                }
-            />
-        </Routes>
+
+                <Route
+                    path="/teacher/dashboard"
+                    element={
+                        <ProtectedRoute allowedRoles={[UserRole.TEACHER]}>
+                            <TeacherDashboard />
+                        </ProtectedRoute>
+                    }
+                >
+                    <Route path="" element={<StudentWorksPage />} />
+                    <Route path="create-work" element={<CreateWorkPage />} />
+                    <Route path="template" element={<TemplatesManagement />} />
+                    <Route path="template/:id" element={<TemplateDetailPage />} />
+                    <Route path="profile" element={<Profile />} />
+                </Route>
+
+                <Route
+                    path="/student/dashboard"
+                    element={
+                        <ProtectedRoute allowedRoles={[UserRole.STUDENT]}>
+                            <StudentDashboard />
+                        </ProtectedRoute>
+                    }
+                />
+            </Routes>
+
+            {backgroundLocation && (
+                <Routes>
+                    <Route path="/TEACHER/dashboard/template/new" element={<TemplateModal />} />
+                    <Route path="/TEACHER/dashboard/template/:id/edit" element={<TemplateModal />} />
+                </Routes>
+            )}
+        </>
     );
 }
 

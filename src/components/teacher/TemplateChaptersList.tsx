@@ -22,7 +22,7 @@ import { TemplateModalChapter } from "./TemplateModalChapter";
 import { TemplateFormValues } from "@/schemes/templateFormSchema";
 
 interface TemplateChaptersListProps {
-    fields: UseFieldArrayReturn<TemplateFormValues, "workTemplateChapters">["fields"];
+    fields: UseFieldArrayReturn<TemplateFormValues, "chapters">["fields"];
     form: UseFormReturn<TemplateFormValues>;
     onRemove: (index: number) => void;
     onMove: (fromIndex: number, toIndex: number) => void;

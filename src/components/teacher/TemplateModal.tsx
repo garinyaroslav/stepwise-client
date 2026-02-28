@@ -21,67 +21,99 @@ import { useForm, useFieldArray } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { templateFormSchema, TemplateFormValues } from '@/schemes/templateFormSchema';
 import { TemplateChaptersList } from './TemplateChaptersList';
-import { WorkTemplate } from '@/types/WorkTemplate';
+import { useNavigate, useParams } from 'react-router';
+import { useEffect } from 'react';
+import { createTemplate, getTemplate, updateTemplate } from '@/api/endpoints';
+import { toast } from 'sonner';
+import { ProjectType } from '@/types/ProjectType';
+import { useAuthStore } from '@/stores/authStore';
+import { queryClient } from '@/queryClient';
 
-type TemplateModalProps = {
-    template: WorkTemplate | null;
-    onClose: () => void;
-    onSave: (template: WorkTemplate) => void;
-};
+export function TemplateModal() {
+    const navigate = useNavigate();
+    const { user } = useAuthStore();
+    const { id } = useParams<{ id: string }>();
+    const isEdit = !!id && id !== 'new';
 
-export function TemplateModal({ template, onClose, onSave }: TemplateModalProps) {
     const form = useForm<TemplateFormValues>({
         resolver: zodResolver(templateFormSchema),
         defaultValues: {
-            templateTitle: template?.templateTitle ?? '',
-            templateDescription: template?.templateDescription ?? '',
-            workTitle: template?.workTitle ?? '',
-            workDescription: template?.workDescription ?? '',
-            type: template?.type ?? '',
-            workTemplateChapters: template?.workTemplateChapters.map((ch) => ({
-                title: ch.title,
-                description: ch.description,
-                deadline: ch.deadline,
-            })) ?? [{ title: '', description: '', deadline: '' }],
+            templateTitle: '',
+            templateDescription: '',
+            workTitle: '',
+            workDescription: '',
+            type: ProjectType.coursework,
+            chapters: [{ index: 0, title: '', description: '', deadline: new Date() }],
         },
     });
 
+    useEffect(() => {
+        if (!isEdit) return;
+        (async () => {
+            const template = await getTemplate(Number(id));
+            form.reset({
+                templateTitle: template.title,
+                templateDescription: template.description,
+                workTitle: template.workTitle,
+                workDescription: template.workDescription,
+                type: template.type,
+                chapters: template.chapters.map((ch) => ({
+                    index: ch.index,
+                    title: ch.title,
+                    description: ch.description ?? '',
+                    deadline: ch.deadline,
+                })),
+            });
+        })();
+    }, [id, isEdit]);
+
     const { fields, append, remove, move } = useFieldArray({
         control: form.control,
-        name: 'workTemplateChapters',
+        name: 'chapters',
     });
 
-    const handleAddChapter = () => {
-        append({ title: '', description: '', deadline: '' });
+    const handleAddChapter = () => append({ index: fields.length, title: '', description: '', deadline: new Date() });
+
+    const onSubmit = async (data: TemplateFormValues) => {
+        if (!user) {
+            const errorMessage = 'Пользователь не найден. Пожалуйста, войдите в систему и попробуйте снова.';
+            toast.error(errorMessage);
+            throw new Error(errorMessage);
+        }
+        try {
+            const resBody = { title: data.workTitle, description: data.workDescription, teacherId: Number(user.id), ...data };
+            if (isEdit) {
+                await updateTemplate(resBody);
+            } else {
+                await createTemplate(resBody);
+            }
+
+            await queryClient.invalidateQueries({ queryKey: ['templates'] });
+
+            toast.success(`Шаблон ${isEdit ? 'обновлен' : 'создан'} успешно!`);
+        } catch (error) {
+            toast.error(error instanceof Error ? error.message : 'Произошла ошибка. Попробуйте снова.');
+            throw new Error(`Не удалось ${isEdit ? 'обновить' : 'создать'} шаблон. Попробуйте снова.`);
+        } finally {
+            closeModal();
+        }
     };
 
-    const onSubmit = (data: TemplateFormValues) => {
-        const chapters = data.workTemplateChapters.map((ch, i) => ({
-            id: template?.workTemplateChapters[i]?.id ?? `ch${Date.now()}_${i}`,
-            ...ch,
-        }));
-
-        onSave({
-            id: template?.id ?? Date.now().toString(),
-            createdAt: template?.createdAt ?? new Date().toISOString(),
-            ...data,
-            workTemplateChapters: chapters,
-        });
-    };
+    const closeModal = () => navigate(-1);
 
     return (
         <div
             className="fixed inset-0 bg-black/50 z-50 overflow-y-auto"
-            onClick={(e) => e.target === e.currentTarget && onClose()}
+            onClick={(e) => e.target === e.currentTarget && closeModal()}
         >
             <div className="min-h-full flex items-start justify-center p-4 py-8">
                 <div className="bg-card text-card-foreground rounded-lg w-full max-w-3xl flex flex-col">
 
                     <div className="flex items-center justify-between p-6 border-b border-border">
                         <h2 className="text-xl font-semibold">
-                            {template ? 'Редактировать шаблон' : 'Создать новый шаблон'}
+                            {isEdit ? 'Редактировать шаблон' : 'Создать новый шаблон'}
                         </h2>
-                        <Button variant="ghost" size="icon" onClick={onClose}>
+                        <Button variant="ghost" size="icon" onClick={closeModal}>
                             <X className="w-5 h-5" />
                         </Button>
                     </div>
@@ -113,11 +145,7 @@ export function TemplateModal({ template, onClose, onSave }: TemplateModalProps)
                                                 <FormItem>
                                                     <FormLabel>Описание шаблона *</FormLabel>
                                                     <FormControl>
-                                                        <Textarea
-                                                            placeholder="Краткое описание назначения шаблона"
-                                                            rows={3}
-                                                            {...field}
-                                                        />
+                                                        <Textarea placeholder="Краткое описание назначения шаблона" rows={3} {...field} />
                                                     </FormControl>
                                                     <FormMessage />
                                                 </FormItem>
@@ -145,19 +173,15 @@ export function TemplateModal({ template, onClose, onSave }: TemplateModalProps)
                                                 render={({ field }) => (
                                                     <FormItem>
                                                         <FormLabel>Тип работы *</FormLabel>
-                                                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                                        <Select onValueChange={field.onChange} value={field.value}>
                                                             <FormControl>
                                                                 <SelectTrigger>
                                                                     <SelectValue placeholder="Выберите тип" />
                                                                 </SelectTrigger>
                                                             </FormControl>
                                                             <SelectContent>
-                                                                <SelectItem value="Курсовая работа">Курсовая работа</SelectItem>
-                                                                <SelectItem value="Дипломная работа">Дипломная работа</SelectItem>
-                                                                <SelectItem value="Научная работа">Научная работа</SelectItem>
-                                                                <SelectItem value="Лабораторная работа">Лабораторная работа</SelectItem>
-                                                                <SelectItem value="Диссертация">Диссертация</SelectItem>
-                                                                <SelectItem value="Проектная работа">Проектная работа</SelectItem>
+                                                                <SelectItem value="COURSEWORK">Курсовая работа</SelectItem>
+                                                                <SelectItem value="THESIS">Дипломная работа</SelectItem>
                                                             </SelectContent>
                                                         </Select>
                                                         <FormMessage />
@@ -173,11 +197,7 @@ export function TemplateModal({ template, onClose, onSave }: TemplateModalProps)
                                                 <FormItem>
                                                     <FormLabel>Описание работы *</FormLabel>
                                                     <FormControl>
-                                                        <Textarea
-                                                            placeholder="Описание академической работы"
-                                                            rows={2}
-                                                            {...field}
-                                                        />
+                                                        <Textarea placeholder="Описание академической работы" rows={2} {...field} />
                                                     </FormControl>
                                                     <FormMessage />
                                                 </FormItem>
@@ -208,20 +228,20 @@ export function TemplateModal({ template, onClose, onSave }: TemplateModalProps)
                                         />
                                     )}
 
-                                    {form.formState.errors.workTemplateChapters && (
+                                    {form.formState.errors.chapters && (
                                         <p className="text-sm font-medium text-destructive mt-2">
-                                            {form.formState.errors.workTemplateChapters.message}
+                                            {form.formState.errors.chapters.message}
                                         </p>
                                     )}
                                 </div>
                             </div>
 
                             <div className="flex items-center justify-end gap-3 p-6 border-t border-border bg-muted rounded-b-lg">
-                                <Button type="button" variant="outline" onClick={onClose}>
+                                <Button type="button" variant="outline" onClick={closeModal}>
                                     Отмена
                                 </Button>
                                 <Button type="submit">
-                                    {template ? 'Сохранить изменения' : 'Создать шаблон'}
+                                    {isEdit ? 'Сохранить изменения' : 'Создать шаблон'}
                                 </Button>
                             </div>
                         </form>

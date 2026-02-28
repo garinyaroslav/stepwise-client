@@ -2,12 +2,13 @@ import { ArrowLeft, Edit, Calendar, FileText } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { WorkTemplate } from '@/types/WorkTemplate';
-import { useNavigate, useParams } from 'react-router';
+import { useLocation, useNavigate, useParams } from 'react-router';
 import { useEffect, useState } from 'react';
 import { getTemplate } from '@/api/endpoints';
 
 export function TemplateDetailPage() {
     const navigate = useNavigate();
+    const location = useLocation();
     const { id } = useParams();
     const [template, setTemplate] = useState<WorkTemplate | null>(null);
 
@@ -18,11 +19,15 @@ export function TemplateDetailPage() {
         })();
     }, [id]);
 
-    const onEdit = () => { };
-
     if (!template) {
         return <TemplateDetailSkeleton />;
     }
+
+    const openEditModal = (templateId: string) => {
+        navigate(`/TEACHER/dashboard/template/${templateId}/edit`, {
+            state: { backgroundLocation: location },
+        });
+    };
 
     return (
         <div>
@@ -42,7 +47,9 @@ export function TemplateDetailPage() {
                         </div>
                         <p className="text-muted-foreground">{template.description}</p>
                     </div>
-                    <Button onClick={onEdit}>
+                    <Button
+                        onClick={(e) => { e.stopPropagation(); openEditModal(template.id); }}
+                    >
                         <Edit className="w-4 h-4" />
                         Редактировать
                     </Button>
@@ -154,7 +161,6 @@ export function TemplateDetailPage() {
 function TemplateDetailSkeleton() {
     return (
         <div>
-            {/* Header skeleton */}
             <div className="mb-6">
                 <Skeleton className="h-5 w-48 mb-4" />
                 <div className="flex items-start justify-between gap-4">
@@ -169,7 +175,6 @@ function TemplateDetailSkeleton() {
                 </div>
             </div>
 
-            {/* Work details skeleton */}
             <div className="bg-card rounded-lg border border-border p-6 mb-6">
                 <Skeleton className="h-5 w-32 mb-4" />
                 <div className="grid grid-cols-2 gap-6">
@@ -188,7 +193,6 @@ function TemplateDetailSkeleton() {
                 </div>
             </div>
 
-            {/* Chapters skeleton */}
             <div className="bg-card rounded-lg border border-border p-6">
                 <Skeleton className="h-5 w-64 mb-6" />
                 <div className="space-y-4">
@@ -209,7 +213,6 @@ function TemplateDetailSkeleton() {
                 </div>
             </div>
 
-            {/* Timeline skeleton */}
             <div className="bg-card rounded-lg border border-border p-6 mt-6">
                 <Skeleton className="h-5 w-48 mb-6" />
                 <div className="space-y-0">

@@ -6,6 +6,7 @@ import {
     Credentials,
     Group,
     GroupCreate,
+    SaveWorkTemplate,
     StudentForCreate,
     UserForCreate,
 } from "./reqTypes";
@@ -327,3 +328,27 @@ export const getTemplate = async (id: number) => {
         throw error instanceof Error ? error : new Error("Network error");
     }
 }
+
+export const createTemplate = async (t: SaveWorkTemplate) =>
+    await axios.post("/template", {
+        workTitle: t.workTitle,
+        workDescription: t.workDescription,
+        templateTitle: t.title,
+        templateDescription: t.description,
+        type: t.type,
+        teacherId: t.teacherId,
+        chapters: t.chapters
+    });
+
+export const updateTemplate = async (t: SaveWorkTemplate) =>
+    await axios.patch(`/template/${t.id}`, {
+        workTitle: t.workTitle,
+        workDescription: t.workDescription,
+        templateTitle: t.title,
+        templateDescription: t.description,
+        type: t.type,
+        chapters: t.chapters
+    });
+
+export const deleteTemplate = async (id: number) =>
+    await axios.delete(`/template/${id}`);

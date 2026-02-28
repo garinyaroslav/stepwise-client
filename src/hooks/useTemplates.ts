@@ -14,5 +14,6 @@ export const useTemplates = (pageNumber: number, search: string) => {
         totalPages: templatesQuery.data?.totalPages ?? 0,
         isTemplatesLoading: templatesQuery.isLoading,
         templatesError: templatesQuery.error,
+        refetch: () => templatesQuery.refetch(),
     };
 };

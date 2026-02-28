@@ -1,39 +1,41 @@
 import { useState } from 'react';
-import { Search, Plus, Trash2, Eye, ChevronLeft, ChevronRight } from 'lucide-react';
-// import { TemplateDetailView } from './TemplateDetailView';
-// import { TemplateModal } from '@/components/teacher/TemplateModal';
+import { Search, Plus, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { WorkTemplate } from '@/types/WorkTemplate';
 import { useTemplates } from '@/hooks/useTemplates';
-import { useNavigate } from 'react-router';
+import { useNavigate, useLocation } from 'react-router';
+import { deleteTemplate } from '@/api/endpoints';
+import { toast } from 'sonner';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 
 export function TemplatesManagement() {
     const navigate = useNavigate();
-    const { templates, totalPages } = useTemplates(0, '');
-    // const [templates, setTemplates] = useState<WorkTemplate[]>(mockTemplates);
+    const location = useLocation();
+    const { templates, totalPages, refetch } = useTemplates(0, '');
     const [searchQuery, setSearchQuery] = useState('');
     const [currentPage, setCurrentPage] = useState(1);
-    const [showModal, setShowModal] = useState(false);
-    const [selectedTemplate, setSelectedTemplate] = useState<WorkTemplate | null>(null);
-    const [viewingTemplate, setViewingTemplate] = useState<WorkTemplate | null>(null);
+    const [templateToDelete, setTemplateToDelete] = useState<WorkTemplate | null>(null);
 
-    const handleDelete = (id: string) => {
-        console.log("delete", id);
+    const handleDeleteConfirm = async () => {
+        if (!templateToDelete) return;
+        try {
+            await deleteTemplate(Number(templateToDelete.id));
+            toast.success('Шаблон успешно удалён');
+            refetch();
+        } catch {
+            toast.error('Ошибка при удалении шаблона');
+        } finally {
+            setTemplateToDelete(null);
+        }
     };
 
-    // if (viewingTemplate) {
-    //     return (
-    //         <TemplateDetailView
-    //             template={viewingTemplate}
-    //             onBack={() => setViewingTemplate(null)}
-    //             onEdit={() => {
-    //                 setSelectedTemplate(viewingTemplate);
-    //                 setShowModal(true);
-    //             }}
-    //         />
-    //     );
-    // }
+    const openCreateModal = () => {
+        navigate('/TEACHER/dashboard/template/new', {
+            state: { backgroundLocation: location },
+        });
+    };
+
 
     const renderTemplates = (templates: WorkTemplate[]) => {
         if (templates.length === 0)
@@ -41,12 +43,16 @@ export function TemplatesManagement() {
                 <div className="p-12 text-center text-muted-foreground">
                     {searchQuery ? 'Шаблоны не найдены' : 'Пока нет шаблонов. Создайте первый!'}
                 </div>
-            )
+            );
 
         return (
             <div className="divide-y divide-border">
                 {templates.map((template) => (
-                    <div key={template.id} onClick={() => navigate(`${template.id}`)} className="p-6 hover:bg-muted transition-colors cursor-pointer">
+                    <div
+                        key={template.id}
+                        onClick={() => navigate(`${template.id}`)}
+                        className="p-6 hover:bg-muted transition-colors cursor-pointer"
+                    >
                         <div className="flex items-center justify-between gap-4">
                             <div className="flex-1">
                                 <div className="flex items-center gap-3 mb-2">
@@ -61,22 +67,23 @@ export function TemplatesManagement() {
                                     <span>Создан: {new Date(template.createdAt).toLocaleDateString('ru-RU')}</span>
                                 </div>
                             </div>
-                            <Button
-                                variant="ghost"
-                                size="icon"
-                                onClick={() => handleDelete(template.id)}
-                                title="Удалить"
-                                className="text-destructive hover:text-destructive hover:bg-destructive/10"
-                            >
-                                <Trash2 className="w-5 h-5" />
-                            </Button>
+                            <div className="flex items-center gap-1">
+                                <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    onClick={(e) => { e.stopPropagation(); setTemplateToDelete(template); }}
+                                    title="Удалить"
+                                    className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                                >
+                                    <Trash2 className="w-5 h-5" />
+                                </Button>
+                            </div>
                         </div>
                     </div>
-                ))
-                }
-            </div >
+                ))}
+            </div>
         );
-    }
+    };
 
     return (
         <div>
@@ -100,7 +107,7 @@ export function TemplatesManagement() {
                         className="pl-10"
                     />
                 </div>
-                <Button onClick={() => { setSelectedTemplate(null); setShowModal(true); }}>
+                <Button onClick={openCreateModal}>
                     <Plus className="w-5 h-5" />
                     Создать шаблон
                 </Button>
@@ -109,6 +116,7 @@ export function TemplatesManagement() {
             <div className="bg-card text-card-foreground rounded-lg border border-border overflow-hidden">
                 {renderTemplates(templates)}
             </div>
+
 
             {/* Pagination */}
             {/* {totalPages > 1 && ( */}
@@ -150,16 +158,33 @@ export function TemplatesManagement() {
             {/*     </div> */}
             {/* )} */}
 
-            {/* {showModal && ( */}
-            {/*     <TemplateModal */}
-            {/*         template={selectedTemplate} */}
-            {/*         onClose={() => { */}
-            {/*             setShowModal(false); */}
-            {/*             setSelectedTemplate(null); */}
-            {/*         }} */}
-            {/*         onSave={handleSaveTemplate} */}
-            {/*     /> */}
-            {/* )} */}
+
+            <AlertDialog
+                open={!!templateToDelete}
+                onOpenChange={(open) => !open && setTemplateToDelete(null)}
+            >
+                <AlertDialogContent>
+                    <AlertDialogHeader>
+                        <AlertDialogTitle>Удалить шаблон?</AlertDialogTitle>
+                        <AlertDialogDescription>
+                            Вы собираетесь удалить шаблон{' '}
+                            <span className="font-medium text-foreground">
+                                «{templateToDelete?.title}»
+                            </span>
+                            . Это действие нельзя отменить.
+                        </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                        <AlertDialogCancel>Отмена</AlertDialogCancel>
+                        <AlertDialogAction
+                            onClick={handleDeleteConfirm}
+                            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                        >
+                            Удалить
+                        </AlertDialogAction>
+                    </AlertDialogFooter>
+                </AlertDialogContent>
+            </AlertDialog>
         </div>
     );
 }
