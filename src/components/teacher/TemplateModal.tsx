@@ -61,7 +61,7 @@ export function TemplateModal() {
                     index: ch.index,
                     title: ch.title,
                     description: ch.description ?? '',
-                    deadline: ch.deadline,
+                    deadline: new Date(ch.deadline),
                 })),
             });
         })();
@@ -74,32 +74,32 @@ export function TemplateModal() {
 
     const handleAddChapter = () => append({ index: fields.length, title: '', description: '', deadline: new Date() });
 
+    const closeModal = () => navigate(-1);
+
     const onSubmit = async (data: TemplateFormValues) => {
         if (!user) {
-            const errorMessage = 'Пользователь не найден. Пожалуйста, войдите в систему и попробуйте снова.';
-            toast.error(errorMessage);
-            throw new Error(errorMessage);
+            toast.error('Пользователь не найден. Пожалуйста, войдите в систему и попробуйте снова.');
+            return;
         }
         try {
-            const resBody = { title: data.workTitle, description: data.workDescription, teacherId: Number(user.id), ...data };
+            const resBody = { id, title: data.templateTitle, description: data.templateDescription, teacherId: Number(user.id), ...data };
+
             if (isEdit) {
                 await updateTemplate(resBody);
             } else {
                 await createTemplate(resBody);
             }
 
-            await queryClient.invalidateQueries({ queryKey: ['templates'] });
+            toast.success(`Шаблон ${isEdit ? 'обновлён' : 'создан'} успешно!`);
 
-            toast.success(`Шаблон ${isEdit ? 'обновлен' : 'создан'} успешно!`);
+            await queryClient.invalidateQueries({ queryKey: ['templates'] });
+            await queryClient.invalidateQueries({ queryKey: ['template', Number(id)] });
+
+            closeModal();
         } catch (error) {
             toast.error(error instanceof Error ? error.message : 'Произошла ошибка. Попробуйте снова.');
-            throw new Error(`Не удалось ${isEdit ? 'обновить' : 'создать'} шаблон. Попробуйте снова.`);
-        } finally {
-            closeModal();
         }
     };
-
-    const closeModal = () => navigate(-1);
 
     return (
         <div
@@ -240,8 +240,10 @@ export function TemplateModal() {
                                 <Button type="button" variant="outline" onClick={closeModal}>
                                     Отмена
                                 </Button>
-                                <Button type="submit">
-                                    {isEdit ? 'Сохранить изменения' : 'Создать шаблон'}
+                                <Button type="submit" disabled={form.formState.isSubmitting}>
+                                    {form.formState.isSubmitting
+                                        ? 'Сохранение...'
+                                        : isEdit ? 'Сохранить изменения' : 'Создать шаблон'}
                                 </Button>
                             </div>
                         </form>

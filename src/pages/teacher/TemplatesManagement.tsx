@@ -2,20 +2,52 @@ import { useState } from 'react';
 import { Search, Plus, Trash2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
+import {
+    Pagination,
+    PaginationContent,
+    PaginationItem,
+    PaginationLink,
+    PaginationNext,
+    PaginationPrevious,
+    PaginationEllipsis,
+} from '@/components/ui/pagination';
+import {
+    AlertDialog,
+    AlertDialogAction,
+    AlertDialogCancel,
+    AlertDialogContent,
+    AlertDialogDescription,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogTitle,
+} from '@/components/ui/alert-dialog';
 import { WorkTemplate } from '@/types/WorkTemplate';
 import { useTemplates } from '@/hooks/useTemplates';
 import { useNavigate, useLocation } from 'react-router';
 import { deleteTemplate } from '@/api/endpoints';
 import { toast } from 'sonner';
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
+import { useDebounce } from '@/hooks/useDebounce';
+
+const PAGE_SIZE = 10;
 
 export function TemplatesManagement() {
     const navigate = useNavigate();
     const location = useLocation();
-    const { templates, totalPages, refetch } = useTemplates(0, '');
+
     const [searchQuery, setSearchQuery] = useState('');
-    const [currentPage, setCurrentPage] = useState(1);
+    const [currentPage, setCurrentPage] = useState(0);
     const [templateToDelete, setTemplateToDelete] = useState<WorkTemplate | null>(null);
+
+    const debouncedSearch = useDebounce(searchQuery, 400);
+
+    const { templates, totalPages, refetch } = useTemplates(currentPage, debouncedSearch);
+
+    const startIndex = currentPage * PAGE_SIZE;
+
+    const handleSearchChange = (value: string) => {
+        setSearchQuery(value);
+        setCurrentPage(0);
+    };
 
     const handleDeleteConfirm = async () => {
         if (!templateToDelete) return;
@@ -36,6 +68,21 @@ export function TemplatesManagement() {
         });
     };
 
+    const getPageNumbers = () => {
+        const pages: (number | 'ellipsis')[] = [];
+        if (totalPages <= 7) {
+            for (let i = 0; i < totalPages; i++) pages.push(i);
+        } else {
+            pages.push(0);
+            if (currentPage > 3) pages.push('ellipsis');
+            for (let i = Math.max(1, currentPage - 1); i <= Math.min(totalPages - 2, currentPage + 1); i++) {
+                pages.push(i);
+            }
+            if (currentPage < totalPages - 4) pages.push('ellipsis');
+            pages.push(totalPages - 1);
+        }
+        return pages;
+    };
 
     const renderTemplates = (templates: WorkTemplate[]) => {
         if (templates.length === 0)
@@ -67,17 +114,15 @@ export function TemplatesManagement() {
                                     <span>Создан: {new Date(template.createdAt).toLocaleDateString('ru-RU')}</span>
                                 </div>
                             </div>
-                            <div className="flex items-center gap-1">
-                                <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    onClick={(e) => { e.stopPropagation(); setTemplateToDelete(template); }}
-                                    title="Удалить"
-                                    className="text-destructive hover:text-destructive hover:bg-destructive/10"
-                                >
-                                    <Trash2 className="w-5 h-5" />
-                                </Button>
-                            </div>
+                            <Button
+                                variant="ghost"
+                                size="icon"
+                                onClick={(e) => { e.stopPropagation(); setTemplateToDelete(template); }}
+                                title="Удалить"
+                                className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                            >
+                                <Trash2 className="w-5 h-5" />
+                            </Button>
                         </div>
                     </div>
                 ))}
@@ -100,10 +145,7 @@ export function TemplatesManagement() {
                     <Input
                         placeholder="Поиск по шаблонам..."
                         value={searchQuery}
-                        onChange={(e) => {
-                            setSearchQuery(e.target.value);
-                            setCurrentPage(1);
-                        }}
+                        onChange={(e) => handleSearchChange(e.target.value)}
                         className="pl-10"
                     />
                 </div>
@@ -117,47 +159,51 @@ export function TemplatesManagement() {
                 {renderTemplates(templates)}
             </div>
 
+            {totalPages > 1 && (
+                <div className="mt-6 flex items-center justify-between">
+                    <p className="text-sm text-muted-foreground">
+                        Показано {startIndex + 1}–{startIndex + templates.length}
+                    </p>
 
-            {/* Pagination */}
-            {/* {totalPages > 1 && ( */}
-            {/*     <div className="mt-6 flex items-center justify-between"> */}
-            {/*         <p className="text-sm text-muted-foreground"> */}
-            {/*             Показано {startIndex + 1}–{Math.min(startIndex + ITEMS_PER_PAGE, filteredTemplates.length)} из{' '} */}
-            {/*             {filteredTemplates.length} */}
-            {/*         </p> */}
-            {/*         <div className="flex items-center gap-2"> */}
-            {/*             <Button */}
-            {/*                 variant="outline" */}
-            {/*                 size="icon" */}
-            {/*                 onClick={() => setCurrentPage((p) => Math.max(1, p - 1))} */}
-            {/*                 disabled={currentPage === 1} */}
-            {/*             > */}
-            {/*                 <ChevronLeft className="w-5 h-5" /> */}
-            {/*             </Button> */}
-            {/*             <div className="flex items-center gap-1"> */}
-            {/*                 {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => ( */}
-            {/*                     <Button */}
-            {/*                         key={page} */}
-            {/*                         variant={currentPage === page ? 'default' : 'ghost'} */}
-            {/*                         size="sm" */}
-            {/*                         onClick={() => setCurrentPage(page)} */}
-            {/*                     > */}
-            {/*                         {page} */}
-            {/*                     </Button> */}
-            {/*                 ))} */}
-            {/*             </div> */}
-            {/*             <Button */}
-            {/*                 variant="outline" */}
-            {/*                 size="icon" */}
-            {/*                 onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))} */}
-            {/*                 disabled={currentPage === totalPages} */}
-            {/*             > */}
-            {/*                 <ChevronRight className="w-5 h-5" /> */}
-            {/*             </Button> */}
-            {/*         </div> */}
-            {/*     </div> */}
-            {/* )} */}
+                    <Pagination className="mx-0 w-auto">
+                        <PaginationContent>
+                            <PaginationItem>
+                                <PaginationPrevious
+                                    onClick={() => setCurrentPage((p) => Math.max(0, p - 1))}
+                                    aria-disabled={currentPage === 0}
+                                    className={currentPage === 0 ? 'pointer-events-none opacity-50' : 'cursor-pointer'}
+                                />
+                            </PaginationItem>
 
+                            {getPageNumbers().map((page, i) =>
+                                page === 'ellipsis' ? (
+                                    <PaginationItem key={`ellipsis-${i}`}>
+                                        <PaginationEllipsis />
+                                    </PaginationItem>
+                                ) : (
+                                    <PaginationItem key={page}>
+                                        <PaginationLink
+                                            isActive={currentPage === page}
+                                            onClick={() => setCurrentPage(page)}
+                                            className="cursor-pointer"
+                                        >
+                                            {page + 1}
+                                        </PaginationLink>
+                                    </PaginationItem>
+                                )
+                            )}
+
+                            <PaginationItem>
+                                <PaginationNext
+                                    onClick={() => setCurrentPage((p) => Math.min(totalPages - 1, p + 1))}
+                                    aria-disabled={currentPage === totalPages - 1}
+                                    className={currentPage === totalPages - 1 ? 'pointer-events-none opacity-50' : 'cursor-pointer'}
+                                />
+                            </PaginationItem>
+                        </PaginationContent>
+                    </Pagination>
+                </div>
+            )}
 
             <AlertDialog
                 open={!!templateToDelete}

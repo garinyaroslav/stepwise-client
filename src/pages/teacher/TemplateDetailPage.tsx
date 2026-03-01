@@ -1,33 +1,30 @@
 import { ArrowLeft, Edit, Calendar, FileText } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
-import { WorkTemplate } from '@/types/WorkTemplate';
 import { useLocation, useNavigate, useParams } from 'react-router';
-import { useEffect, useState } from 'react';
 import { getTemplate } from '@/api/endpoints';
+import { useQuery } from '@tanstack/react-query';
 
 export function TemplateDetailPage() {
     const navigate = useNavigate();
     const location = useLocation();
     const { id } = useParams();
-    const [template, setTemplate] = useState<WorkTemplate | null>(null);
 
-    useEffect(() => {
-        (async () => {
-            const t = await getTemplate(Number(id));
-            setTemplate(t);
-        })();
-    }, [id]);
-
-    if (!template) {
-        return <TemplateDetailSkeleton />;
-    }
+    const { data: template, isLoading } = useQuery({
+        queryKey: ['template', Number(id)],
+        queryFn: () => getTemplate(Number(id)),
+        enabled: !!id,
+    });
 
     const openEditModal = (templateId: string) => {
         navigate(`/TEACHER/dashboard/template/${templateId}/edit`, {
             state: { backgroundLocation: location },
         });
     };
+
+    if (isLoading || !template) {
+        return <TemplateDetailSkeleton />;
+    }
 
     return (
         <div>
@@ -47,9 +44,7 @@ export function TemplateDetailPage() {
                         </div>
                         <p className="text-muted-foreground">{template.description}</p>
                     </div>
-                    <Button
-                        onClick={(e) => { e.stopPropagation(); openEditModal(template.id); }}
-                    >
+                    <Button onClick={() => openEditModal(template.id)}>
                         <Edit className="w-4 h-4" />
                         Редактировать
                     </Button>
@@ -174,25 +169,14 @@ function TemplateDetailSkeleton() {
                     <Skeleton className="h-9 w-36 rounded-md" />
                 </div>
             </div>
-
             <div className="bg-card rounded-lg border border-border p-6 mb-6">
                 <Skeleton className="h-5 w-32 mb-4" />
                 <div className="grid grid-cols-2 gap-6">
-                    <div className="space-y-2">
-                        <Skeleton className="h-4 w-28" />
-                        <Skeleton className="h-5 w-40" />
-                    </div>
-                    <div className="space-y-2">
-                        <Skeleton className="h-4 w-36" />
-                        <Skeleton className="h-5 w-44" />
-                    </div>
-                    <div className="col-span-2 space-y-2">
-                        <Skeleton className="h-4 w-28" />
-                        <Skeleton className="h-5 w-full" />
-                    </div>
+                    <div className="space-y-2"><Skeleton className="h-4 w-28" /><Skeleton className="h-5 w-40" /></div>
+                    <div className="space-y-2"><Skeleton className="h-4 w-36" /><Skeleton className="h-5 w-44" /></div>
+                    <div className="col-span-2 space-y-2"><Skeleton className="h-4 w-28" /><Skeleton className="h-5 w-full" /></div>
                 </div>
             </div>
-
             <div className="bg-card rounded-lg border border-border p-6">
                 <Skeleton className="h-5 w-64 mb-6" />
                 <div className="space-y-4">
@@ -212,7 +196,6 @@ function TemplateDetailSkeleton() {
                     ))}
                 </div>
             </div>
-
             <div className="bg-card rounded-lg border border-border p-6 mt-6">
                 <Skeleton className="h-5 w-48 mb-6" />
                 <div className="space-y-0">

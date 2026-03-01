@@ -305,7 +305,7 @@ export const resetPassword = async (token: string, newPassword: string) =>
 
 export const getMyTemplates = async (pageNumber: number, search: string) => {
     try {
-        const res = await axios.get<Pageiable<WorkTemplate>>("/template", { params: { pageNumber } });
+        const res = await axios.get<Pageiable<WorkTemplate>>("/template", { params: { pageNumber, pageSize: 5, search } });
 
         if (res.status !== HttpStatusCode.Ok)
             throw new Error("Error while getting templates");
