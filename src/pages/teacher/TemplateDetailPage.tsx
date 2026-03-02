@@ -4,6 +4,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { useLocation, useNavigate, useParams } from 'react-router';
 import { getTemplate } from '@/api/endpoints';
 import { useQuery } from '@tanstack/react-query';
+import { getWorkTypeNameByType } from '@/utils/getWorkTypeNameByType';
 
 export function TemplateDetailPage() {
     const navigate = useNavigate();
@@ -39,7 +40,7 @@ export function TemplateDetailPage() {
                         <div className="flex items-center gap-3 mb-2">
                             <h1 className="text-2xl font-semibold">{template.title}</h1>
                             <span className="px-3 py-1 bg-secondary text-secondary-foreground text-sm font-medium rounded-full">
-                                {template.type}
+                                {getWorkTypeNameByType(template.type)}
                             </span>
                         </div>
                         <p className="text-muted-foreground">{template.description}</p>

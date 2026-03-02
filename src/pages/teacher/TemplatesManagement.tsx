@@ -27,8 +27,9 @@ import { useNavigate, useLocation } from 'react-router';
 import { deleteTemplate } from '@/api/endpoints';
 import { toast } from 'sonner';
 import { useDebounce } from '@/hooks/useDebounce';
+import { getWorkTypeNameByType } from '@/utils/getWorkTypeNameByType';
 
-const PAGE_SIZE = 10;
+const PAGE_SIZE = 5;
 
 export function TemplatesManagement() {
     const navigate = useNavigate();
@@ -40,7 +41,7 @@ export function TemplatesManagement() {
 
     const debouncedSearch = useDebounce(searchQuery, 400);
 
-    const { templates, totalPages, refetch } = useTemplates(currentPage, debouncedSearch);
+    const { templates, totalPages, refetch } = useTemplates(currentPage, PAGE_SIZE, debouncedSearch);
 
     const startIndex = currentPage * PAGE_SIZE;
 
@@ -92,6 +93,8 @@ export function TemplatesManagement() {
                 </div>
             );
 
+        console.log(templates)
+
         return (
             <div className="divide-y divide-border">
                 {templates.map((template) => (
@@ -105,7 +108,7 @@ export function TemplatesManagement() {
                                 <div className="flex items-center gap-3 mb-2">
                                     <h3 className="text-lg font-semibold">{template.title}</h3>
                                     <span className="px-3 py-1 bg-secondary text-secondary-foreground text-xs font-medium rounded-full">
-                                        {template.type}
+                                        {getWorkTypeNameByType(template.type)}
                                     </span>
                                 </div>
                                 <p className="text-muted-foreground text-sm mb-3">{template.description}</p>

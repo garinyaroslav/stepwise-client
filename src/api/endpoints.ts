@@ -303,9 +303,9 @@ export const passwordResetReq = async (email: string) =>
 export const resetPassword = async (token: string, newPassword: string) =>
     await axios.patch("/auth/passwords", { token, newPassword });
 
-export const getMyTemplates = async (pageNumber: number, search: string) => {
+export const getMyTemplates = async (pageNumber: number, pageSize: number, search: string) => {
     try {
-        const res = await axios.get<Pageiable<WorkTemplate>>("/template", { params: { pageNumber, pageSize: 5, search } });
+        const res = await axios.get<Pageiable<WorkTemplate>>("/template", { params: { pageNumber, pageSize: pageSize, search } });
 
         if (res.status !== HttpStatusCode.Ok)
             throw new Error("Error while getting templates");
