@@ -5,7 +5,6 @@ export const templateChapterSchema = z.object({
     index: z.number().min(0),
     title: z.string().min(1, "Название раздела обязательно"),
     description: z.string().optional(),
-    deadline: z.date(),
 });
 
 export const templateFormSchema = z.object({

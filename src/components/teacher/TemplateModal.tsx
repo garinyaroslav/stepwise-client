@@ -43,7 +43,7 @@ export function TemplateModal() {
             workTitle: '',
             workDescription: '',
             type: ProjectType.coursework,
-            chapters: [{ index: 0, title: '', description: '', deadline: new Date() }],
+            chapters: [{ index: 0, title: '', description: '' }],
         },
     });
 
@@ -61,7 +61,6 @@ export function TemplateModal() {
                     index: ch.index,
                     title: ch.title,
                     description: ch.description ?? '',
-                    deadline: new Date(ch.deadline),
                 })),
             });
         })();
@@ -72,7 +71,7 @@ export function TemplateModal() {
         name: 'chapters',
     });
 
-    const handleAddChapter = () => append({ index: fields.length, title: '', description: '', deadline: new Date() });
+    const handleAddChapter = () => append({ index: fields.length, title: '', description: '' });
 
     const closeModal = () => navigate(-1);
 

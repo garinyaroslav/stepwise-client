@@ -5,7 +5,6 @@ import { ProjectAddForm } from "./components/admin/ProjectAddForm";
 import { ProjectDetailsForm } from "./components/admin/ProjectDitailsForm";
 import { LoadingFallback } from "./components/general/LoadingFallback";
 import { ProtectedRoute } from "./components/general/ProtectedRoute";
-import { CreateWorkPage } from "./components/teacher/CreateWorkPage";
 import { TemplateModal } from "./components/teacher/TemplateModal";
 import { Toaster } from "./components/ui/sonner";
 import { GroupsManagement } from "./pages/admin/GroupsManagement";
@@ -20,6 +19,7 @@ import { UserRole } from "./types/auth/UserRole";
 import { TemplatesManagement } from "./pages/teacher/TemplatesManagement";
 import { StudentWorksPage } from "./pages/teacher/StudentWorksPage";
 import { TemplateDetailPage } from "./pages/teacher/TemplateDetailPage";
+import { CreateAcademicWorkPage } from "./pages/teacher/CreateAcademicWorkPage";
 
 const Login = lazy(() => import("./pages/general/Login"));
 const AdminDashboard = lazy(() => import("./pages/admin/AdminDashboard"));
@@ -80,7 +80,7 @@ function AppContent() {
                     }
                 >
                     <Route path="" element={<StudentWorksPage />} />
-                    <Route path="create-work" element={<CreateWorkPage />} />
+                    <Route path="create-work" element={<CreateAcademicWorkPage />} />
                     <Route path="template" element={<TemplatesManagement />} />
                     <Route path="template/:id" element={<TemplateDetailPage />} />
                     <Route path="profile" element={<Profile />} />

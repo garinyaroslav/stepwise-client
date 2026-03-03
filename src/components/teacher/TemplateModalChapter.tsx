@@ -1,16 +1,13 @@
 import { FC } from "react";
 import { useSortable } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
-import { GripVertical, Trash2, ChevronDownIcon, Calendar as CalendarSvg } from "lucide-react";
+import { GripVertical, Trash2, Clock } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
-import { Label } from "@/components/ui/label";
 import { FormControl, FormField, FormItem, FormMessage } from "@/components/ui/form";
 import { UseFormReturn } from "react-hook-form";
 import { TemplateFormValues } from "@/schemes/templateFormSchema";
-import { Popover, PopoverContent, PopoverTrigger } from "../ui/popover";
-import { Calendar } from "../ui/calendar";
 
 interface TemplateModalChapterProps {
     id: string;
@@ -93,44 +90,13 @@ export const TemplateModalChapter: FC<TemplateModalChapterProps> = ({
                     )}
                 />
 
-                <FormField
-                    control={form.control}
-                    name={`chapters.${index}.deadline`}
-                    render={({ field }) => (
-                        <FormItem className="flex items-center gap-2">
-                            <CalendarSvg className="w-4 h-4 text-muted-foreground flex-shrink-0" />
-                            <Label className="text-muted-foreground font-normal">Срок сдачи:</Label>
-                            <Popover>
-                                <PopoverTrigger asChild>
-                                    <FormControl>
-                                        <Button
-                                            variant="outline"
-                                            className="w-48 justify-between font-normal"
-                                        >
-                                            {field.value ? new Date(field.value).toLocaleDateString() : "Выберите дату"}
-                                            <ChevronDownIcon />
-                                        </Button>
-                                    </FormControl>
-                                </PopoverTrigger>
-                                <PopoverContent
-                                    className="w-auto overflow-hidden p-0"
-                                    align="start"
-                                >
-                                    <Calendar
-                                        mode="single"
-                                        selected={
-                                            field.value ? new Date(field.value) : undefined
-                                        }
-                                        captionLayout="dropdown"
-                                        disabled={(date) => date < new Date()}
-                                        onSelect={field.onChange}
-                                    />
-                                </PopoverContent>
-                            </Popover>
-                            <FormMessage />
-                        </FormItem>
-                    )}
-                />
+                <div className="flex items-center gap-2 px-3 py-2 rounded-md bg-muted/60 border border-dashed border-border">
+                    <Clock className="w-3.5 h-3.5 text-muted-foreground flex-shrink-0" />
+                    <p className="text-xs text-muted-foreground">
+                        Дедлайн устанавливается при создании учебной работы
+                    </p>
+                </div>
+
             </div>
 
             <Button

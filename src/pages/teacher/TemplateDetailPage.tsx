@@ -1,4 +1,4 @@
-import { ArrowLeft, Edit, Calendar, FileText } from 'lucide-react';
+import { ArrowLeft, Edit, Calendar, FileText, Clock } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useLocation, useNavigate, useParams } from 'react-router';
@@ -85,6 +85,13 @@ export function TemplateDetailPage() {
                     </h2>
                 </div>
 
+                <div className="flex items-start gap-3 px-4 py-3 mb-6 rounded-lg border border-dashed border-border bg-muted/40">
+                    <Clock className="w-4 h-4 text-muted-foreground flex-shrink-0 mt-0.5" />
+                    <p className="text-sm text-muted-foreground">
+                        Дедлайны для разделов задаются индивидуально при создании учебной работы для каждой группы.
+                    </p>
+                </div>
+
                 {template.chapters.length === 0 ? (
                     <div className="p-8 text-center text-muted-foreground">
                         В этом шаблоне пока нет разделов
@@ -103,19 +110,12 @@ export function TemplateDetailPage() {
                                     <div className="flex-1">
                                         <h3 className="font-semibold text-lg mb-2">{chapter.title}</h3>
                                         <p className="text-muted-foreground text-sm mb-3">{chapter.description}</p>
-                                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                                            <Calendar className="w-4 h-4" />
-                                            <span>
-                                                Срок сдачи:{' '}
-                                                <span className="font-medium text-foreground">
-                                                    {new Date(chapter.deadline).toLocaleDateString('ru-RU', {
-                                                        year: 'numeric',
-                                                        month: 'long',
-                                                        day: 'numeric',
-                                                    })}
-                                                </span>
-                                            </span>
+
+                                        <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                                            <Clock className="w-3.5 h-3.5" />
+                                            <span>Дедлайн назначается при создании учебной работы</span>
                                         </div>
+
                                     </div>
                                     <FileText className="w-6 h-6 text-muted-foreground flex-shrink-0" />
                                 </div>
@@ -125,31 +125,6 @@ export function TemplateDetailPage() {
                 )}
             </div>
 
-            {template.chapters.length > 0 && (
-                <div className="bg-card text-card-foreground rounded-lg border border-border p-6 mt-6">
-                    <h2 className="font-semibold mb-6">Временная шкала разделов</h2>
-                    <div className="relative">
-                        {[...template.chapters]
-                            .sort((a, b) => new Date(a.deadline).getTime() - new Date(b.deadline).getTime())
-                            .map((chapter, index, arr) => (
-                                <div key={chapter.index} className="flex items-start gap-4 mb-6 last:mb-0">
-                                    <div className="flex flex-col items-center">
-                                        <div className="w-3 h-3 bg-primary rounded-full" />
-                                        {index < arr.length - 1 && (
-                                            <div className="w-0.5 h-12 bg-secondary my-1" />
-                                        )}
-                                    </div>
-                                    <div className="flex-1 pb-4">
-                                        <div className="text-sm font-medium text-foreground mb-1">{chapter.title}</div>
-                                        <div className="text-xs text-muted-foreground">
-                                            {new Date(chapter.deadline).toLocaleDateString('ru-RU')}
-                                        </div>
-                                    </div>
-                                </div>
-                            ))}
-                    </div>
-                </div>
-            )}
         </div>
     );
 }
