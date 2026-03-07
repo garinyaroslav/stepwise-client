@@ -1,5 +1,5 @@
-import { getGroups, getMyTemplates } from '@/api/endpoints';
-import { Group } from '@/api/reqTypes';
+import { createAcademicWork, getGroups, getMyTemplates } from '@/api/endpoints';
+import { ChapterDeadline, Group } from '@/api/reqTypes';
 import { Button } from '@/components/ui/button';
 import { Calendar as CalendarComponent } from '@/components/ui/calendar';
 import { Input } from '@/components/ui/input';
@@ -7,46 +7,50 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { cn } from '@/lib/utils';
 import { WorkTemplate } from '@/types/WorkTemplate';
 import { getWorkTypeNameByType } from '@/utils/getWorkTypeNameByType';
+import { useDebounce } from '@/hooks/useDebounce';
 import { format, formatDistanceToNow } from 'date-fns';
 import { ru } from 'date-fns/locale';
 import { ArrowRight, Calendar, CheckCircle, Clock, FileText, Search, Users } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 
-type ChapterDeadline = {
-    chapterIndex: number;
-    deadline: string;
-};
-
 export function CreateAcademicWorkPage() {
     const [step, setStep] = useState<1 | 2 | 3>(1);
     const [templates, setTemplates] = useState<WorkTemplate[]>([]);
     const [groups, setGroups] = useState<Group[]>([]);
+    const [isGroupsLoading, setIsGroupsLoading] = useState(false);
+    const [isTemplatesLoading, setIsTemplatesLoading] = useState(false);
 
     const [selectedGroupId, setSelectedGroupId] = useState<number | null>(null);
     const [selectedTemplateId, setSelectedTemplateId] = useState<string | null>(null);
 
     const [deadlines, setDeadlines] = useState<ChapterDeadline[]>([]);
     const [isSubmitting, setIsSubmitting] = useState(false);
+
     const [groupSearch, setGroupSearch] = useState('');
     const [templateSearch, setTemplateSearch] = useState('');
 
+    const debouncedGroupSearch = useDebounce(groupSearch, 400);
+    const debouncedTemplateSearch = useDebounce(templateSearch, 400);
+
     useEffect(() => {
-        getGroups().then(setGroups).catch(console.error);
-        getMyTemplates(0, 10, "").then((res) => setTemplates(res.data)).catch(console.error);
-    }, []);
+        setIsGroupsLoading(true);
+        getGroups(debouncedGroupSearch)
+            .then(setGroups)
+            .catch(console.error)
+            .finally(() => setIsGroupsLoading(false));
+    }, [debouncedGroupSearch]);
+
+    useEffect(() => {
+        setIsTemplatesLoading(true);
+        getMyTemplates(0, 20, debouncedTemplateSearch)
+            .then((res) => setTemplates(res.data))
+            .catch(console.error)
+            .finally(() => setIsTemplatesLoading(false));
+    }, [debouncedTemplateSearch]);
 
     const selectedTemplate = templates.find((t) => t.id === selectedTemplateId);
     const selectedGroup = groups.find((g) => g.id === selectedGroupId);
-
-    const filteredGroups = groups.filter((g) =>
-        g.name.toLowerCase().includes(groupSearch.toLowerCase())
-    );
-
-    const filteredTemplates = templates.filter((t) =>
-        t.title.toLowerCase().includes(templateSearch.toLowerCase()) ||
-        t.type.toLowerCase().includes(templateSearch.toLowerCase())
-    );
 
     const handleSelectGroup = (groupId: number) => {
         setSelectedGroupId(groupId);
@@ -58,13 +62,13 @@ export function CreateAcademicWorkPage() {
         setSelectedTemplateId(templateId);
         const template = templates.find((t) => t.id === templateId);
         if (template) {
-            setDeadlines(template.chapters.map((_, idx) => ({ chapterIndex: idx, deadline: '' })));
+            setDeadlines(template.chapters.map((_, idx) => ({ chapterIndex: idx, deadline: new Date() })));
             setStep(3);
             setTemplateSearch('');
         }
     };
 
-    const handleDeadlineChange = (chapterIndex: number, deadline: string) => {
+    const handleDeadlineChange = (chapterIndex: number, deadline: Date) => {
         setDeadlines((prev) =>
             prev.map((d) => (d.chapterIndex === chapterIndex ? { ...d, deadline } : d))
         );
@@ -87,14 +91,23 @@ export function CreateAcademicWorkPage() {
 
         setIsSubmitting(true);
         try {
-            // await createAcademicWork({
-            //     groupId: selectedGroupId!,
-            //     workTemplateId: Number(selectedTemplateId),
-            //     deadlines: deadlines.map((d) => ({
-            //         chapterIndex: d.chapterIndex,
-            //         deadline: new Date(d.deadline).toISOString(),
-            //     })),
-            // });
+            console.log({
+                groupId: selectedGroupId!,
+                workTemplateId: Number(selectedTemplateId),
+                deadlines: deadlines.map((d) => ({
+                    chapterIndex: d.chapterIndex,
+                    deadline: new Date(d.deadline),
+                })),
+            });
+
+            await createAcademicWork({
+                groupId: selectedGroupId!,
+                workTemplateId: Number(selectedTemplateId),
+                deadlines: deadlines.map((d) => ({
+                    chapterIndex: d.chapterIndex,
+                    deadline: new Date(d.deadline),
+                })),
+            });
 
             toast.success(`Академическая работа успешно создана для группы ${selectedGroup?.name}`);
             setTimeout(handleReset, 1500);
@@ -114,11 +127,11 @@ export function CreateAcademicWorkPage() {
                 </p>
             </div>
 
-            <div className="bg-card border border-border rounded-lg p-6 mb-6">
+            <div className="bg-card border border-border rounded-lg py-6 pl-6 pr-10 mb-6">
                 <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3">
                         <div className={`w-8 h-8 rounded-full flex items-center justify-center font-semibold text-sm
-                            ${step > 1 ? 'bg-primary text-primary-foreground' : step === 1 ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'}`}>
+                            ${step >= 1 ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'}`}>
                             {step > 1 ? <CheckCircle className="w-4 h-4" /> : '1'}
                         </div>
                         <div>
@@ -133,7 +146,7 @@ export function CreateAcademicWorkPage() {
 
                     <div className="flex items-center gap-3">
                         <div className={`w-8 h-8 rounded-full flex items-center justify-center font-semibold text-sm
-                            ${step > 2 ? 'bg-primary text-primary-foreground' : step === 2 ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'}`}>
+                            ${step >= 2 ? 'bg-primary text-primary-foreground' : 'bg-muted text-muted-foreground'}`}>
                             {step > 2 ? <CheckCircle className="w-4 h-4" /> : '2'}
                         </div>
                         <div>
@@ -178,26 +191,32 @@ export function CreateAcademicWorkPage() {
                         />
                     </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                        {filteredGroups.length > 0 ? (
-                            filteredGroups.map((group) => (
+                    {isGroupsLoading ? (
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                            {Array.from({ length: 6 }).map((_, i) => (
+                                <div key={i} className="h-16 rounded-lg bg-muted animate-pulse" />
+                            ))}
+                        </div>
+                    ) : groups.length > 0 ? (
+                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                            {groups.map((group) => (
                                 <button
                                     key={group.id}
                                     onClick={() => handleSelectGroup(group.id)}
                                     className="p-4 border border-border rounded-lg hover:border-primary hover:bg-accent transition-colors text-left"
                                 >
                                     <div className="font-semibold text-sm mb-1">{group.name}</div>
-                                    <div className="text-sm text-muted-foreground">
+                                    <div className="text-xs text-muted-foreground">
                                         Студентов: {group.studentsCount}
                                     </div>
                                 </button>
-                            ))
-                        ) : (
-                            <div className="col-span-3 text-center py-8 text-muted-foreground">
-                                Группы не найдены
-                            </div>
-                        )}
-                    </div>
+                            ))}
+                        </div>
+                    ) : (
+                        <div className="text-center py-8 text-muted-foreground">
+                            Группы не найдены
+                        </div>
+                    )}
                 </div>
             )}
 
@@ -226,9 +245,15 @@ export function CreateAcademicWorkPage() {
                         />
                     </div>
 
-                    <div className="space-y-3">
-                        {filteredTemplates.length > 0 ? (
-                            filteredTemplates.map((template) => (
+                    {isTemplatesLoading ? (
+                        <div className="space-y-3">
+                            {Array.from({ length: 4 }).map((_, i) => (
+                                <div key={i} className="h-20 rounded-lg bg-muted animate-pulse" />
+                            ))}
+                        </div>
+                    ) : templates.length > 0 ? (
+                        <div className="space-y-3">
+                            {templates.map((template) => (
                                 <button
                                     key={template.id}
                                     onClick={() => handleSelectTemplate(template.id)}
@@ -242,18 +267,18 @@ export function CreateAcademicWorkPage() {
                                                     {getWorkTypeNameByType(template.type)}
                                                 </span>
                                             </div>
-                                            <p className="text-sm text-muted-foreground mb-2">{template.description}</p>
+                                            <p className="text-sm text-muted-foreground mb-1">{template.description}</p>
                                             <div className="text-xs text-muted-foreground">
                                                 Разделов: {template.chapters.length}
                                             </div>
                                         </div>
                                     </div>
                                 </button>
-                            ))
-                        ) : (
-                            <div className="text-center py-8 text-muted-foreground">Шаблоны не найдены</div>
-                        )}
-                    </div>
+                            ))}
+                        </div>
+                    ) : (
+                        <div className="text-center py-8 text-muted-foreground">Шаблоны не найдены</div>
+                    )}
                 </div>
             )}
 
@@ -302,104 +327,105 @@ export function CreateAcademicWorkPage() {
                             </div>
                         </div>
 
-                        {selectedTemplate.chapters.map((chapter, idx) => {
-                            const deadlineDate = deadlines[idx]?.deadline
-                                ? new Date(deadlines[idx].deadline)
-                                : undefined;
+                        <div className="space-y-3">
+                            {selectedTemplate.chapters.map((chapter, idx) => {
+                                const deadlineDate = deadlines[idx]?.deadline
+                                    ? new Date(deadlines[idx].deadline)
+                                    : undefined;
 
-                            return (
-                                <div key={chapter.index} className="p-4 border border-border rounded-lg">
-                                    <div className="flex items-start gap-4">
-                                        <div className="flex items-center justify-center w-8 h-8 bg-primary text-primary-foreground rounded-full font-semibold flex-shrink-0 text-sm">
-                                            {idx + 1}
-                                        </div>
-                                        <div className="flex-1">
-                                            <h3 className="font-semibold text-sm mb-1">{chapter.title}</h3>
-                                            {chapter.description && (
-                                                <p className="text-sm text-muted-foreground mb-3">{chapter.description}</p>
-                                            )}
-                                            <div className="flex items-center gap-2 mt-2">
-                                                <Popover>
-                                                    <PopoverTrigger asChild>
-                                                        <Button
-                                                            variant="outline"
-                                                            className={cn(
-                                                                "w-64 justify-start text-left font-normal gap-2",
-                                                                !deadlineDate && "text-muted-foreground"
-                                                            )}
-                                                        >
-                                                            <Calendar className="w-4 h-4" />
-                                                            {deadlineDate
-                                                                ? format(deadlineDate, "d MMM yyyy, HH:mm", { locale: ru })
-                                                                : "Выберите дату и время"}
-                                                        </Button>
-                                                    </PopoverTrigger>
-                                                    <PopoverContent className="w-auto p-0" align="start">
-                                                        <CalendarComponent
-                                                            mode="single"
-                                                            selected={deadlineDate}
-                                                            onSelect={(date) => {
-                                                                if (!date) return;
-                                                                const existing = deadlines[idx]?.deadline
-                                                                    ? new Date(deadlines[idx].deadline)
-                                                                    : new Date();
-                                                                date.setHours(existing.getHours(), existing.getMinutes());
-                                                                handleDeadlineChange(idx, date.toISOString());
-                                                            }}
-                                                        />
-                                                        <div className="border-t border-border p-3 flex items-center gap-2">
-                                                            <Clock className="w-4 h-4 text-muted-foreground" />
-                                                            <span className="text-sm text-muted-foreground">Время:</span>
-                                                            <div className="flex items-center gap-1">
-                                                                <select
-                                                                    className="h-9 rounded-md border border-input bg-transparent px-2 text-sm shadow-xs outline-none focus-visible:ring-2 focus-visible:ring-primary transition-[color,box-shadow] cursor-pointer"
-                                                                    value={deadlineDate ? String(deadlineDate.getHours()).padStart(2, '0') : ''}
-                                                                    onChange={(e) => {
-                                                                        const base = deadlineDate ? new Date(deadlineDate) : new Date();
-                                                                        base.setHours(Number(e.target.value));
-                                                                        handleDeadlineChange(idx, base.toISOString());
-                                                                    }}
-                                                                >
-                                                                    <option value="" disabled>чч</option>
-                                                                    {Array.from({ length: 24 }, (_, i) => (
-                                                                        <option key={i} value={String(i).padStart(2, '0')}>
-                                                                            {String(i).padStart(2, '0')}
-                                                                        </option>
-                                                                    ))}
-                                                                </select>
-                                                                <span className="text-muted-foreground text-sm font-medium">:</span>
-                                                                <select
-                                                                    className="h-9 rounded-md border border-input bg-transparent px-2 text-sm shadow-xs outline-none focus-visible:ring-2 focus-visible:ring-primary transition-[color,box-shadow] cursor-pointer"
-                                                                    value={deadlineDate ? String(deadlineDate.getMinutes()).padStart(2, '0') : ''}
-                                                                    onChange={(e) => {
-                                                                        const base = deadlineDate ? new Date(deadlineDate) : new Date();
-                                                                        base.setMinutes(Number(e.target.value));
-                                                                        handleDeadlineChange(idx, base.toISOString());
-                                                                    }}
-                                                                >
-                                                                    <option value="" disabled>мм</option>
-                                                                    {Array.from({ length: 12 }, (_, i) => (
-                                                                        <option key={i} value={String(i * 5).padStart(2, '0')}>
-                                                                            {String(i * 5).padStart(2, '0')}
-                                                                        </option>
-                                                                    ))}
-                                                                </select>
-                                                            </div>                                                        </div>
-                                                    </PopoverContent>
-                                                </Popover>
-
-                                                {deadlineDate && (
-                                                    <span className="text-xs text-muted-foreground">
-                                                        {formatDistanceToNow(deadlineDate, { addSuffix: true, locale: ru })}
-                                                    </span>
+                                return (
+                                    <div key={chapter.index} className="p-4 border border-border rounded-lg">
+                                        <div className="flex items-start gap-4">
+                                            <div className="flex items-center justify-center w-8 h-8 bg-primary text-primary-foreground rounded-full font-semibold flex-shrink-0 text-sm">
+                                                {idx + 1}
+                                            </div>
+                                            <div className="flex-1">
+                                                <h3 className="font-semibold text-sm mb-1">{chapter.title}</h3>
+                                                {chapter.description && (
+                                                    <p className="text-sm text-muted-foreground mb-3">{chapter.description}</p>
                                                 )}
+                                                <div className="flex items-center gap-2 mt-2">
+                                                    <Popover>
+                                                        <PopoverTrigger asChild>
+                                                            <Button
+                                                                variant="outline"
+                                                                className={cn(
+                                                                    "w-64 justify-start text-left font-normal gap-2",
+                                                                    !deadlineDate && "text-muted-foreground"
+                                                                )}
+                                                            >
+                                                                <Calendar className="w-4 h-4" />
+                                                                {deadlineDate
+                                                                    ? format(deadlineDate, "d MMM yyyy, HH:mm", { locale: ru })
+                                                                    : "Выберите дату и время"}
+                                                            </Button>
+                                                        </PopoverTrigger>
+                                                        <PopoverContent className="w-auto p-0" align="start">
+                                                            <CalendarComponent
+                                                                mode="single"
+                                                                selected={deadlineDate}
+                                                                captionLayout="dropdown"
+                                                                onSelect={(date) => {
+                                                                    if (!date) return;
+                                                                    const existing = deadlines[idx]?.deadline
+                                                                        ? new Date(deadlines[idx].deadline)
+                                                                        : new Date();
+                                                                    date.setHours(existing.getHours(), existing.getMinutes());
+                                                                    handleDeadlineChange(idx, date);
+                                                                }}
+                                                            />
+                                                            <div className="border-t border-border p-3 flex items-center gap-2">
+                                                                <Clock className="w-4 h-4 text-muted-foreground" />
+                                                                <span className="text-sm text-muted-foreground">Время:</span>
+                                                                <div className="flex items-center gap-1">
+                                                                    <select
+                                                                        className="h-9 rounded-md border border-input bg-transparent px-2 text-sm shadow-xs outline-none focus-visible:ring-2 focus-visible:ring-primary transition-[color,box-shadow] cursor-pointer"
+                                                                        value={deadlineDate ? String(deadlineDate.getHours()).padStart(2, '0') : '00'}
+                                                                        onChange={(e) => {
+                                                                            const base = deadlineDate ? new Date(deadlineDate) : new Date();
+                                                                            base.setHours(Number(e.target.value));
+                                                                            handleDeadlineChange(idx, base);
+                                                                        }}
+                                                                    >
+                                                                        {Array.from({ length: 24 }, (_, i) => (
+                                                                            <option key={i} value={String(i).padStart(2, '0')}>
+                                                                                {String(i).padStart(2, '0')}
+                                                                            </option>
+                                                                        ))}
+                                                                    </select>
+                                                                    <span className="text-muted-foreground text-sm font-medium">:</span>
+                                                                    <select
+                                                                        className="h-9 rounded-md border border-input bg-transparent px-2 text-sm shadow-xs outline-none focus-visible:ring-2 focus-visible:ring-primary transition-[color,box-shadow] cursor-pointer"
+                                                                        value={deadlineDate ? String(deadlineDate.getMinutes()).padStart(2, '0') : '00'}
+                                                                        onChange={(e) => {
+                                                                            const base = deadlineDate ? new Date(deadlineDate) : new Date();
+                                                                            base.setMinutes(Number(e.target.value));
+                                                                            handleDeadlineChange(idx, base);
+                                                                        }}
+                                                                    >
+                                                                        {Array.from({ length: 12 }, (_, i) => (
+                                                                            <option key={i} value={String(i * 5).padStart(2, '0')}>
+                                                                                {String(i * 5).padStart(2, '0')}
+                                                                            </option>
+                                                                        ))}
+                                                                    </select>
+                                                                </div>
+                                                            </div>
+                                                        </PopoverContent>
+                                                    </Popover>
+
+                                                    {deadlineDate && (
+                                                        <span className="text-xs text-muted-foreground">
+                                                            {formatDistanceToNow(deadlineDate, { addSuffix: true, locale: ru })}
+                                                        </span>
+                                                    )}
+                                                </div>
                                             </div>
                                         </div>
                                     </div>
-                                </div>
-                            );
-                        })}
-
+                                );
+                            })}
+                        </div>
                     </div>
 
                     <div className="flex items-center justify-end gap-3">

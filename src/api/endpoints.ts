@@ -2,7 +2,7 @@ import { AxiosResponse, HttpStatusCode } from "axios";
 import axios from "../axios";
 import { UserRole } from "@/types/auth/UserRole";
 import {
-    CreateAcademicProject,
+    CreateAcademicWork,
     Credentials,
     Group,
     GroupCreate,
@@ -249,14 +249,14 @@ export const getAcademicProjectById = async (
     }
 };
 
-export const createAcademicProject = async (
-    project: CreateAcademicProject
+export const createAcademicWork = async (
+    project: CreateAcademicWork
 ): Promise<void> => {
     try {
         const res = await axios.post("/work", project);
 
         if (res.status !== HttpStatusCode.Created)
-            throw new Error("Academic project is not created");
+            throw new Error("Academic work is not created");
     } catch (error) {
         throw error instanceof Error ? error : new Error("Network error");
     }

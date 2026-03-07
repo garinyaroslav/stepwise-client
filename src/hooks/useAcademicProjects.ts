@@ -1,4 +1,4 @@
-import { createAcademicProject, getAcademicProjectById, getAcademicProjectsByGroupId } from "@/api/endpoints";
+import { createAcademicWork, getAcademicProjectById, getAcademicProjectsByGroupId } from "@/api/endpoints";
 import { CreateAcademicProject } from "@/api/reqTypes";
 import { queryClient } from "@/queryClient";
 import { AcademicProject } from "@/types/AcademicProject";
@@ -36,7 +36,7 @@ export const useAcademicProjects = (groupId: number | null, projectId: number | 
     });
 
     const createAcademicProjectMutation = useMutation({
-        mutationFn: (p: CreateAcademicProject) => createAcademicProject(p),
+        mutationFn: (p: CreateAcademicProject) => createAcademicWork(p),
         onSuccess: (_, variables) => {
             queryClient.invalidateQueries({
                 queryKey: ["academicProjects", variables.groupId],

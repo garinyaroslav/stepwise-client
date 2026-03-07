@@ -29,13 +29,15 @@ export interface GroupCreate {
     studentIds: number[];
 }
 
-export interface CreateAcademicProject {
-    title: string;
-    description: string;
-    type: ProjectType;
-    groupId: string;
-    teacherId: string;
-    chapters: ProjectChapter[];
+export interface CreateAcademicWork {
+    groupId: number;
+    workTemplateId: number;
+    deadlines: ChapterDeadline[];
+}
+
+export interface ChapterDeadline {
+    chapterIndex: number;
+    deadline: Date;
 }
 
 export interface SaveWorkTemplate {
