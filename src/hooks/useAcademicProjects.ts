@@ -1,17 +1,17 @@
-import { createAcademicWork, getAcademicProjectById, getAcademicProjectsByGroupId } from "@/api/endpoints";
-import { CreateAcademicProject } from "@/api/reqTypes";
+import { createAcademicWork, getAcademicWorkById, getAcademicWorksByGroupId } from "@/api/endpoints";
+import { CreateAcademicWork } from "@/api/reqTypes";
 import { queryClient } from "@/queryClient";
-import { AcademicProject } from "@/types/AcademicProject";
+import { AcademicWork } from "@/types/AcademicWork";
 import { useMutation, useQuery } from "@tanstack/react-query";
 
-export const useAcademicProjects = (groupId: number | null, projectId: number | null) => {
-    const academicProjectsQuery = useQuery<AcademicProject[], Error>({
+export const useAcademicWorks = (groupId: number | null, projectId: number | null) => {
+    const academicProjectsQuery = useQuery<AcademicWork[], Error>({
         queryKey: ["academicProjects", groupId],
         queryFn: async () => {
             if (groupId === null) return [];
 
             try {
-                const data = await getAcademicProjectsByGroupId(groupId);
+                const data = await getAcademicWorksByGroupId(groupId);
                 return data;
             } catch (err) {
                 throw err;
@@ -20,13 +20,13 @@ export const useAcademicProjects = (groupId: number | null, projectId: number | 
         enabled: !!groupId,
     });
 
-    const academicProjectQuery = useQuery<AcademicProject | null, Error>({
+    const academicProjectQuery = useQuery<AcademicWork | null, Error>({
         queryKey: ["academicProject", projectId],
         queryFn: async () => {
             if (projectId === null) return null;
 
             try {
-                const data = await getAcademicProjectById(projectId);
+                const data = await getAcademicWorkById(projectId);
                 return data;
             } catch (err) {
                 throw err;
@@ -35,8 +35,8 @@ export const useAcademicProjects = (groupId: number | null, projectId: number | 
         enabled: !!projectId,
     });
 
-    const createAcademicProjectMutation = useMutation({
-        mutationFn: (p: CreateAcademicProject) => createAcademicWork(p),
+    const createAcademicWorkMutation = useMutation({
+        mutationFn: (p: CreateAcademicWork) => createAcademicWork(p),
         onSuccess: (_, variables) => {
             queryClient.invalidateQueries({
                 queryKey: ["academicProjects", variables.groupId],
@@ -55,8 +55,8 @@ export const useAcademicProjects = (groupId: number | null, projectId: number | 
         academicProject: academicProjectQuery.data,
         academicProjectLoading: academicProjectQuery.isLoading,
         academicProjectError: academicProjectQuery.error,
-        createAcademicProject: createAcademicProjectMutation,
-        isCreatingProject: createAcademicProjectMutation.isPending,
-        createAcademicProjectError: createAcademicProjectMutation.error,
+        createAcademicWork: createAcademicWorkMutation,
+        isCreatingProject: createAcademicWorkMutation.isPending,
+        createAcademicWorkError: createAcademicWorkMutation.error,
     };
 };

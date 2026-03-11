@@ -17,9 +17,11 @@ import { queryClient } from "./queryClient";
 import { useAuthStore } from "./stores/authStore";
 import { UserRole } from "./types/auth/UserRole";
 import { TemplatesManagement } from "./pages/teacher/TemplatesManagement";
-import { StudentWorksPage } from "./pages/teacher/StudentWorksPage";
+import { StudentWorksPage as TeacherStudentWorks } from "./pages/teacher/StudentWorksPage";
+import { StudentWorksPage } from "./pages/student/StudentWorksPage";
 import { TemplateDetailPage } from "./pages/teacher/TemplateDetailPage";
 import { CreateAcademicWorkPage } from "./pages/teacher/CreateAcademicWorkPage";
+import { StudentWorkDetails } from "./pages/student/StudentWorkDetails";
 
 const Login = lazy(() => import("./pages/general/Login"));
 const AdminDashboard = lazy(() => import("./pages/admin/AdminDashboard"));
@@ -79,7 +81,7 @@ function AppContent() {
                         </ProtectedRoute>
                     }
                 >
-                    <Route path="" element={<StudentWorksPage />} />
+                    <Route path="" element={<TeacherStudentWorks />} />
                     <Route path="create-work" element={<CreateAcademicWorkPage />} />
                     <Route path="template" element={<TemplatesManagement />} />
                     <Route path="template/:id" element={<TemplateDetailPage />} />
@@ -93,7 +95,11 @@ function AppContent() {
                             <StudentDashboard />
                         </ProtectedRoute>
                     }
-                />
+                >
+                    <Route path="" element={<StudentWorksPage />} />
+                    <Route path=":id" element={<StudentWorkDetails />} />
+                    <Route path="profile" element={<Profile />} />
+                </Route>
             </Routes>
 
             {backgroundLocation && (

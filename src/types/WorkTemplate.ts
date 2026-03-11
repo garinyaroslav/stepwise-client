@@ -1,5 +1,5 @@
-import { ProjectChapter } from "./ProjectChapter";
 import { ProjectType } from "./ProjectType";
+import { TemplateChapter } from "./TemplateChapter";
 
 export type WorkTemplate = {
     id: string;
@@ -8,6 +8,6 @@ export type WorkTemplate = {
     workTitle: string;
     workDescription: string;
     type: ProjectType;
-    chapters: ProjectChapter[];
+    chapters: TemplateChapter[];
     createdAt: string;
 };

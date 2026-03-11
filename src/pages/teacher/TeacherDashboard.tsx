@@ -1,6 +1,5 @@
 import { Outlet, useNavigate } from "react-router";
 import { Topbar } from "@/components/general/Topbar";
-// import { ProfileModal } from "@/components/teacher/ProfileModal";
 
 const TeacherDashboard = () => {
     const navigate = useNavigate();

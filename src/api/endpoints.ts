@@ -8,13 +8,15 @@ import {
     GroupCreate,
     SaveWorkTemplate,
     StudentForCreate,
+    UpdateProject,
     UserForCreate,
 } from "./reqTypes";
 import { GroupResponse, Pageiable, UserCreateResponse } from "./resTypes";
 import { UserWithProfile } from "@/types/UserWithProfile";
-import { AcademicProject } from "@/types/AcademicProject";
 import { ProfileDto } from "@/types/Profile";
 import { WorkTemplate } from "@/types/WorkTemplate";
+import { AcademicWork } from "@/types/AcademicWork";
+import { ProjectDetails } from "@/types/ProjectDetails";
 
 export const loginReq = async (credentials: Credentials) => {
     const response = await axios.post("/auth/sessions", credentials);
@@ -217,11 +219,11 @@ export const createStudent = async (
         throw new Error("Произошла ошибка при создании студента.");
     }
 };
-export const getAcademicProjectsByGroupId = async (
+export const getAcademicWorksByGroupId = async (
     groupId?: number,
-): Promise<AcademicProject[]> => {
+): Promise<AcademicWork[]> => {
     try {
-        const response = await axios.get<AcademicProject[]>(
+        const response = await axios.get<AcademicWork[]>(
             `/work/group/${groupId}`,
         );
         if (response.status !== HttpStatusCode.Ok)
@@ -233,13 +235,26 @@ export const getAcademicProjectsByGroupId = async (
     }
 };
 
-export const getAcademicProjectById = async (
-    projectId?: number,
-): Promise<AcademicProject> => {
+export const getAcademicWorkById = async (
+    workId?: number,
+): Promise<AcademicWork> => {
     try {
-        const response = await axios.get<AcademicProject>(
-            `/work/${projectId}`,
+        const response = await axios.get<AcademicWork>(
+            `/work/${workId}`,
         );
+        if (response.status !== HttpStatusCode.Ok)
+            throw new Error("Academic project fetch failed");
+
+        return response.data;
+    } catch (error) {
+        throw error instanceof Error ? error : new Error("Network error");
+    }
+};
+
+export const getStudentAcademicWorks = async (): Promise<AcademicWork[]> => {
+    try {
+        const response = await axios.get<AcademicWork[]>("/work/student");
+
         if (response.status !== HttpStatusCode.Ok)
             throw new Error("Academic project fetch failed");
 
@@ -352,3 +367,27 @@ export const updateTemplate = async (t: SaveWorkTemplate) =>
 
 export const deleteTemplate = async (id: number) =>
     await axios.delete(`/template/${id}`);
+
+export const getStudentProjectByWorkId = async (workId: number): Promise<ProjectDetails[]> => {
+    try {
+        const response = await axios.get<ProjectDetails[]>(`/project/work/${workId}`);
+
+        if (response.status !== HttpStatusCode.Ok)
+            throw new Error('Project fetch failed');
+
+        return response.data;
+    } catch (error) {
+        throw error instanceof Error ? error : new Error('Network error');
+    }
+};
+
+export const updateProject = async (dto: UpdateProject): Promise<void> => {
+    try {
+        const response = await axios.put('/project', dto);
+
+        if (response.status !== HttpStatusCode.Ok)
+            throw new Error('Project update failed');
+    } catch (error) {
+        throw error instanceof Error ? error : new Error('Network error');
+    }
+};

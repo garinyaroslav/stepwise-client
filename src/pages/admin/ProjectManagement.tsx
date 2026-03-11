@@ -32,9 +32,9 @@ import {
     EmptyTitle,
     EmptyDescription,
 } from "@/components/ui/empty";
-import { useAcademicProjects } from "@/hooks/useAcademicProjects";
 import { ProjectType } from "@/types/ProjectType";
 import { useNavigate, useSearchParams } from "react-router";
+import { useAcademicWorks } from "@/hooks/useAcademicProjects";
 
 export const ProjectManagement = () => {
     const navigate = useNavigate();
@@ -49,7 +49,7 @@ export const ProjectManagement = () => {
     );
 
     const { academicProjects, academicProjectsLoading, academicProjectsError } =
-        useAcademicProjects(selectedGroupId ? Number(selectedGroupId) : null, null);
+        useAcademicWorks(selectedGroupId ? Number(selectedGroupId) : null, null);
 
     useEffect(() => {
         if (selectedGroupId) {

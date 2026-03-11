@@ -1,7 +1,7 @@
 import { ProjectChapter } from "./ProjectChapter";
 import { ProjectType } from "./ProjectType";
 
-export interface AcademicProject {
+export interface AcademicWork {
     id: number;
     title: string;
     description: string;
@@ -12,5 +12,5 @@ export interface AcademicProject {
     teacherLastName: string;
     teacherMiddleName: string;
     groupName: string;
-    academicWorkChapters: ProjectChapter[];
+    chapters: ProjectChapter[];
 }

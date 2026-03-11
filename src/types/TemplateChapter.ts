@@ -1,6 +1,5 @@
-export interface ProjectChapter {
+export interface TemplateChapter {
     index: number;
     title: string;
     description?: string;
-    deadline: Date;
 }

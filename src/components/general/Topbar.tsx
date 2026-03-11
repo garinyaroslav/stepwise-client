@@ -8,7 +8,7 @@ interface TopbarProps {
 
 export const Topbar: FC<TopbarProps> = ({ items }) => {
     const navigate = useNavigate();
-    const [selected, setSelected] = useState(0);
+    const [selected, setSelected] = useState<number | null>(0);
 
     return (
         <header className="bg-white border-b border-gray-200 sticky top-0 z-50">
@@ -37,7 +37,10 @@ export const Topbar: FC<TopbarProps> = ({ items }) => {
                         )}
                     </nav>
 
-                    <AvatarProfileLink onClick={() => navigate("profile")} />
+                    <AvatarProfileLink onClick={() => {
+                        navigate("profile")
+                        setSelected(null);
+                    }} />
                 </div>
             </div>
         </header>

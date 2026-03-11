@@ -32,8 +32,8 @@ import { useTeachers } from "@/hooks/useTeachers";
 import { ProjectSectionsList } from "./ProjectSectionList";
 import { ProjectType } from "@/types/ProjectType";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "../ui/select";
-import { useAcademicProjects } from "@/hooks/useAcademicProjects";
-import { CreateAcademicProject } from "@/api/reqTypes";
+import { useAcademicWorks } from "@/hooks/useAcademicProjects";
+import { CreateAcademicWork } from "@/api/reqTypes";
 
 export const ProjectAddForm = () => {
     const [groupsPopoverOpen, setGroupsPopoverOpen] = useState(false);
@@ -48,10 +48,10 @@ export const ProjectAddForm = () => {
         teacherDebouncedSearch,
     );
     const {
-        createAcademicProject: createAcademicProjectM,
+        createAcademicWork: createAcademicProjectM,
         isCreatingProject,
-        createAcademicProjectError
-    } = useAcademicProjects(null, null);
+        createAcademicWorkError
+    } = useAcademicWorks(null, null);
 
     const form = useForm<z.infer<typeof createAcademicProject>>({
         resolver: zodResolver(createAcademicProject),
@@ -103,7 +103,7 @@ export const ProjectAddForm = () => {
                 return chapter;
             });
 
-            createAcademicProjectM.mutate(data as CreateAcademicProject);
+            createAcademicProjectM.mutate(data as unknown as CreateAcademicWork);
         } catch (error) {
             console.error("Error creating project:", error);
             toast.error("Произошла ошибка при создании проекта.");
@@ -111,21 +111,21 @@ export const ProjectAddForm = () => {
     };
 
     useEffect(() => {
-        if (createAcademicProjectError) {
+        if (createAcademicWorkError) {
             toast.error(
-                createAcademicProjectError instanceof Error
-                    ? createAcademicProjectError.message
+                createAcademicWorkError instanceof Error
+                    ? createAcademicWorkError.message
                     : "Произошла неизвестная ошибка при создании проекта"
             );
         }
-    }, [createAcademicProjectError]);
+    }, [createAcademicWorkError]);
 
     useEffect(() => {
-        if (!isCreatingProject && !createAcademicProjectError && createAcademicProjectM.status === 'success') {
+        if (!isCreatingProject && !createAcademicWorkError && createAcademicProjectM.status === 'success') {
             toast.success("Проект успешно создан.");
             form.reset();
         }
-    }, [isCreatingProject, createAcademicProjectError, createAcademicProjectM.status]);
+    }, [isCreatingProject, createAcademicWorkError, createAcademicProjectM.status]);
 
     return (
         <div className="flex min-h-screen">

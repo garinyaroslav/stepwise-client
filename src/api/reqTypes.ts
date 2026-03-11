@@ -1,6 +1,6 @@
 import { UserRole } from "@/types/auth/UserRole";
-import { ProjectChapter } from "@/types/ProjectChapter";
 import { ProjectType } from "@/types/ProjectType";
+import { TemplateChapter } from "@/types/TemplateChapter";
 
 export interface Credentials {
     username: string;
@@ -48,5 +48,12 @@ export interface SaveWorkTemplate {
     workDescription: string;
     type: ProjectType;
     teacherId: number;
-    chapters: ProjectChapter[];
+    chapters: TemplateChapter[];
 }
+
+export interface UpdateProject {
+    id: number;
+    title: string;
+    description: string;
+}
+

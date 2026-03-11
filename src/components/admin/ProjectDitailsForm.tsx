@@ -1,14 +1,14 @@
 import { useParams } from "react-router";
 import { ProjectType } from "@/types/ProjectType";
 import { Skeleton } from "../ui/skeleton";
-import { useAcademicProjects } from "@/hooks/useAcademicProjects";
 import { Card, CardContent, CardHeader, CardTitle } from "../ui/card";
 import { FileText } from "lucide-react";
+import { useAcademicWorks } from "@/hooks/useAcademicProjects";
 
 export const ProjectDetailsForm = () => {
     const { projectId } = useParams<{ projectId?: string }>();
     const parsedProjectId = projectId ? Number(projectId) : null;
-    const { academicProject, academicProjectLoading, academicProjectError } = useAcademicProjects(null, parsedProjectId);
+    const { academicProject, academicProjectLoading, academicProjectError } = useAcademicWorks(null, parsedProjectId);
 
     if (academicProjectLoading) {
         return (
