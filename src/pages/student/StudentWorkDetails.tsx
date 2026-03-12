@@ -24,16 +24,65 @@ import { getStudentProjectByWorkId, getAcademicWorkById, updateProject } from '@
 import { toast } from 'sonner';
 import { format, isPast, formatDistanceToNow } from 'date-fns';
 import { ru } from 'date-fns/locale';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Card, CardContent } from '@/components/ui/card';
+import { Separator } from '@/components/ui/separator';
+import { Skeleton } from '@/components/ui/skeleton';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { Label } from '@/components/ui/label';
 
 const statusConfig: Record<
     ItemStatus,
-    { label: string; color: string; icon: React.ComponentType<{ className?: string }> }
+    { label: string; variant: 'default' | 'secondary' | 'destructive' | 'outline'; icon: React.ComponentType<{ className?: string }> }
 > = {
-    DRAFT: { label: 'Черновик', color: 'text-muted-foreground bg-muted', icon: FileText },
-    SUBMITTED: { label: 'На проверке', color: 'text-chart-4 bg-chart-4/10', icon: Clock },
-    APPROVED: { label: 'Одобрено', color: 'text-success bg-success/10', icon: CheckCircle },
-    REJECTED: { label: 'Отклонено', color: 'text-destructive bg-destructive/10', icon: XCircle },
+    DRAFT: { label: 'Черновик', variant: 'secondary', icon: FileText },
+    SUBMITTED: { label: 'На проверке', variant: 'outline', icon: Clock },
+    APPROVED: { label: 'Одобрено', variant: 'default', icon: CheckCircle },
+    REJECTED: { label: 'Отклонено', variant: 'destructive', icon: XCircle },
 };
+
+function ProjectSkeleton() {
+    return (
+        <div className="space-y-6">
+            <Skeleton className="h-5 w-32" />
+            <Card>
+                <CardContent className="p-6 space-y-3">
+                    <div className="flex items-start justify-between gap-4">
+                        <Skeleton className="h-7 w-2/3" />
+                        <Skeleton className="h-8 w-32" />
+                    </div>
+                    <Skeleton className="h-4 w-full" />
+                    <Skeleton className="h-4 w-4/5" />
+                    <div className="flex gap-2 pt-1">
+                        <Skeleton className="h-6 w-28 rounded-full" />
+                        <Skeleton className="h-6 w-24 rounded-full" />
+                        <Skeleton className="h-6 w-20 rounded-full" />
+                    </div>
+                </CardContent>
+            </Card>
+            <div className="space-y-4">
+                {[1, 2, 3].map((i) => (
+                    <Card key={i}>
+                        <CardContent className="p-6">
+                            <div className="flex items-start gap-3 mb-4">
+                                <Skeleton className="w-10 h-10 rounded-lg flex-shrink-0" />
+                                <div className="flex-1 space-y-2">
+                                    <Skeleton className="h-5 w-1/3" />
+                                    <Skeleton className="h-3.5 w-3/4" />
+                                </div>
+                                <Skeleton className="h-6 w-24 rounded-full" />
+                            </div>
+                            <Separator className="mb-4 bg-input" />
+                            <Skeleton className="h-9 w-full" />
+                        </CardContent>
+                    </Card>
+                ))}
+            </div>
+        </div>
+    );
+}
 
 export function StudentWorkDetails() {
     const { id } = useParams<{ id: string }>();
@@ -95,18 +144,18 @@ export function StudentWorkDetails() {
         }
     };
 
-    const handleFileSelect = (itemId: number, file: File) => {
+    const handleFileSelect = (key: number, file: File) => {
         setSelectedFile(file);
-        setUploadingItemId(itemId);
+        setUploadingItemId(key);
     };
 
-    const handleUpload = async (itemId: number) => {
+    const handleUpload = async (key: number) => {
         if (!selectedFile) return;
         try {
             const formData = new FormData();
             formData.append('projectId', id!);
             formData.append('file', selectedFile);
-            console.log('Uploading file for item:', itemId);
+            console.log('Uploading file for item:', key);
             setTimeout(() => { setUploadingItemId(null); setSelectedFile(null); }, 1000);
         } catch (error) {
             console.error('Failed to upload file:', error);
@@ -125,15 +174,17 @@ export function StudentWorkDetails() {
 
     if (!work || !project) {
         return (
-            <div className="bg-background">
-                <button onClick={() => navigate(-1)} className="flex items-center gap-2 text-primary hover:text-primary-hover mb-6 transition-colors text-sm">
-                    <ArrowLeft className="w-4 h-4" />
+            <div className="space-y-6">
+                <Button variant="ghost" size="sm" onClick={() => navigate(-1)} className="-ml-2 text-muted-foreground">
+                    <ArrowLeft className="w-4 h-4 mr-1" />
                     Назад к работам
-                </button>
-                <div className="bg-card border border-border rounded-lg p-12 text-center">
-                    <AlertCircle className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-                    <h3 className="text-lg font-semibold mb-2 text-card-foreground">Проект не найден</h3>
-                </div>
+                </Button>
+                <Card>
+                    <CardContent className="p-12 text-center">
+                        <AlertCircle className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+                        <h3 className="text-lg font-semibold text-card-foreground">Проект не найден</h3>
+                    </CardContent>
+                </Card>
             </div>
         );
     }
@@ -142,119 +193,105 @@ export function StudentWorkDetails() {
     const chapters = work.chapters ?? [];
 
     return (
-        <div>
-            <button onClick={() => navigate(-1)} className="flex items-center gap-2 text-primary hover:text-primary-hover mb-6 transition-colors text-sm">
-                <ArrowLeft className="w-4 h-4" />
+        <div className="space-y-6">
+            <Button variant="ghost" size="sm" onClick={() => navigate(-1)} className="-ml-2 text-muted-foreground">
+                <ArrowLeft className="w-4 h-4 mr-1" />
                 Назад к работам
-            </button>
+            </Button>
 
-            <div className="bg-card border border-border rounded-lg p-6 mb-6">
-                {isEditing ? (
-                    <div>
-                        <div className="mb-4">
-                            <label className="text-xs text-muted-foreground mb-1.5 block">Название проекта</label>
-                            <input
-                                autoFocus
-                                value={editTitle}
-                                onChange={(e) => setEditTitle(e.target.value)}
-                                className="w-full px-3 py-2 bg-background border border-input rounded-lg text-card-foreground text-sm focus:outline-none focus:ring-2 focus:ring-ring"
-                                placeholder="Название проекта"
-                            />
+            <Card>
+                <CardContent className="p-6">
+                    {isEditing ? (
+                        <div className="space-y-4">
+                            <div className="space-y-1.5">
+                                <Label>Название проекта</Label>
+                                <Input
+                                    autoFocus
+                                    value={editTitle}
+                                    onChange={(e) => setEditTitle(e.target.value)}
+                                    placeholder="Название проекта"
+                                />
+                            </div>
+                            <div className="space-y-1.5">
+                                <Label>Описание</Label>
+                                <Textarea
+                                    rows={3}
+                                    value={editDescription}
+                                    onChange={(e) => setEditDescription(e.target.value)}
+                                    placeholder="Описание проекта"
+                                    className="resize-none"
+                                />
+                            </div>
+                            <div className="flex items-center gap-2">
+                                <Button size="sm" onClick={handleSaveEdit} disabled={isSaving || !editTitle.trim()}>
+                                    {isSaving
+                                        ? <div className="w-3.5 h-3.5 border-2 border-primary-foreground border-t-transparent rounded-full animate-spin mr-1.5" />
+                                        : <Check className="w-3.5 h-3.5 mr-1.5" />}
+                                    Сохранить
+                                </Button>
+                                <Button variant="outline" size="sm" onClick={handleCancelEdit} disabled={isSaving}>
+                                    <X className="w-3.5 h-3.5 mr-1.5" />
+                                    Отмена
+                                </Button>
+                            </div>
                         </div>
-                        <div className="mb-5">
-                            <label className="text-xs text-muted-foreground mb-1.5 block">Описание</label>
-                            <textarea
-                                rows={3}
-                                value={editDescription}
-                                onChange={(e) => setEditDescription(e.target.value)}
-                                className="w-full px-3 py-2 bg-background border border-input rounded-lg text-card-foreground text-sm focus:outline-none focus:ring-2 focus:ring-ring resize-none"
-                                placeholder="Описание проекта"
-                            />
-                        </div>
-                        <div className="flex items-center gap-2">
-                            <button
-                                onClick={handleSaveEdit}
-                                disabled={isSaving || !editTitle.trim()}
-                                className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary-hover transition-colors text-sm font-medium disabled:opacity-50"
-                            >
-                                {isSaving
-                                    ? <div className="w-4 h-4 border-2 border-primary-foreground border-t-transparent rounded-full animate-spin" />
-                                    : <Check className="w-4 h-4" />}
-                                Сохранить
-                            </button>
-                            <button
-                                onClick={handleCancelEdit}
-                                disabled={isSaving}
-                                className="flex items-center gap-2 px-4 py-2 border border-border rounded-lg hover:bg-accent transition-colors text-sm text-muted-foreground"
-                            >
-                                <X className="w-4 h-4" />
-                                Отмена
-                            </button>
-                        </div>
-                    </div>
-                ) : (
-                    <>
-                        <div className="flex items-start justify-between gap-4 mb-2">
-                            <h1 className="text-2xl font-semibold text-card-foreground">{project.title}</h1>
-                            <button
-                                onClick={handleStartEdit}
-                                className="flex items-center gap-1.5 px-3 py-1.5 border border-border rounded-lg hover:bg-accent transition-colors text-xs text-muted-foreground flex-shrink-0"
-                            >
-                                <Pencil className="w-3.5 h-3.5" />
-                                Редактировать
-                            </button>
-                        </div>
-                        {project.description && (
-                            <p className="text-sm text-muted-foreground mb-4">{project.description}</p>
-                        )}
-
-                        <div className="flex flex-wrap items-center gap-2 pt-4 border-t border-border">
-                            <div className="flex items-center gap-1.5 bg-muted rounded-full px-3 py-1.5">
-                                <User className="w-3.5 h-3.5 text-muted-foreground flex-shrink-0" />
-                                <span className="text-xs text-muted-foreground">
+                    ) : (
+                        <>
+                            <div className="flex items-start justify-between gap-4 mb-2">
+                                <h1 className="text-2xl font-semibold text-card-foreground">{project.title}</h1>
+                                <Button variant="outline" size="sm" onClick={handleStartEdit} className="flex-shrink-0">
+                                    <Pencil className="w-3.5 h-3.5 mr-1.5" />
+                                    Редактировать
+                                </Button>
+                            </div>
+                            {project.description && (
+                                <p className="text-sm text-muted-foreground mb-4">{project.description}</p>
+                            )}
+                            <Separator className="mb-4 bg-input" />
+                            <div className="flex flex-wrap items-center gap-2">
+                                <Badge variant="secondary" className="rounded-full font-normal text-sm gap-1.5 py-1">
+                                    <User className="w-3 h-3" />
                                     {work.teacherLastName} {work.teacherName?.[0]}.{work.teacherMiddleName?.[0]}.
-                                </span>
-                            </div>
-                            <div className="flex items-center gap-1.5 bg-muted rounded-full px-3 py-1.5">
-                                <FileText className="w-3.5 h-3.5 text-muted-foreground flex-shrink-0" />
-                                <span className="text-xs text-muted-foreground">{work.groupName}</span>
-                            </div>
-                            <div className="flex items-center gap-1.5 bg-primary/10 rounded-full px-3 py-1.5">
-                                <Clock className="w-3.5 h-3.5 text-primary flex-shrink-0" />
-                                <span className="text-xs text-primary font-medium">
+                                </Badge>
+                                <Badge variant="secondary" className="rounded-full font-normal text-sm gap-1.5 py-1">
+                                    <FileText className="w-3 h-3" />
+                                    {work.groupName}
+                                </Badge>
+                                <Badge variant="outline" className="rounded-full font-normal text-sm gap-1.5 py-1">
+                                    <Clock className="w-3 h-3" />
                                     {work.countOfChapters} {work.countOfChapters === 1 ? 'раздел' : work.countOfChapters < 5 ? 'раздела' : 'разделов'}
-                                </span>
+                                </Badge>
                             </div>
-                        </div>
-                    </>
-                )}
+                        </>
+                    )}
 
-                {!isEditing && allItemsApproved && (
-                    <div className={`mt-4 p-4 rounded-lg border ${project.isApprovedForDefense ? 'bg-success/10 border-success' : 'bg-chart-4/10 border-chart-4'}`}>
-                        {project.isApprovedForDefense ? (
-                            <div className="flex items-start gap-3">
-                                <CheckCircle className="w-5 h-5 text-success flex-shrink-0 mt-0.5" />
-                                <div>
-                                    <div className="font-semibold text-card-foreground mb-1">Допущен к защите</div>
-                                    <p className="text-sm text-muted-foreground">Свяжитесь с преподавателем для согласования даты защиты.</p>
-                                    <button className="mt-3 flex items-center gap-2 text-sm text-primary hover:text-primary-hover transition-colors">
-                                        <Mail className="w-4 h-4" />
-                                        Написать преподавателю
-                                    </button>
+                    {!isEditing && allItemsApproved && (
+                        <div className={`mt-5 p-4 rounded-lg border ${project.isApprovedForDefense ? 'bg-success/10 border-success' : 'bg-chart-4/10 border-chart-4'}`}>
+                            {project.isApprovedForDefense ? (
+                                <div className="flex items-start gap-3">
+                                    <CheckCircle className="w-5 h-5 text-success flex-shrink-0 mt-0.5" />
+                                    <div>
+                                        <p className="font-semibold text-card-foreground mb-1">Допущен к защите</p>
+                                        <p className="text-sm text-muted-foreground">Свяжитесь с преподавателем для согласования даты защиты.</p>
+                                        <Button variant="link" size="sm" className="px-0 mt-1 h-auto text-primary">
+                                            <Mail className="w-3.5 h-3.5 mr-1.5" />
+                                            Написать преподавателю
+                                        </Button>
+                                    </div>
                                 </div>
-                            </div>
-                        ) : (
-                            <div className="flex items-start gap-3">
-                                <Clock className="w-5 h-5 text-chart-4 flex-shrink-0 mt-0.5" />
-                                <div>
-                                    <div className="font-semibold text-card-foreground mb-1">Ожидание допуска к защите</div>
-                                    <p className="text-sm text-muted-foreground">Все разделы одобрены. Ожидайте решения преподавателя.</p>
+                            ) : (
+                                <div className="flex items-start gap-3">
+                                    <Clock className="w-5 h-5 text-chart-4 flex-shrink-0 mt-0.5" />
+                                    <div>
+                                        <p className="font-semibold text-card-foreground mb-1">Ожидание допуска к защите</p>
+                                        <p className="text-sm text-muted-foreground">Все разделы одобрены. Ожидайте решения преподавателя.</p>
+                                    </div>
                                 </div>
-                            </div>
-                        )}
-                    </div>
-                )}
-            </div>
+                            )}
+                        </div>
+                    )}
+                </CardContent>
+            </Card>
 
             <div className="space-y-4">
                 {chapters.map((chapter, index) => {
@@ -267,13 +304,12 @@ export function StudentWorkDetails() {
 
                     const canSubmit = item?.status === 'DRAFT' && item?.fileName;
                     const needsReupload = item?.status === 'REJECTED';
-
                     const fileInputId = `file-chapter-${index}`;
                     const uploadKey = item?.id ?? -(index + 1);
 
                     return (
-                        <div key={chapter.index} className="bg-card border border-border rounded-lg overflow-hidden">
-                            <div className="p-6">
+                        <Card key={chapter.index} className="overflow-hidden">
+                            <CardContent className="p-6">
                                 <div className="flex items-start justify-between gap-4 mb-4">
                                     <div className="flex items-start gap-3 flex-1">
                                         <div className="w-10 h-10 bg-primary/10 rounded-lg flex items-center justify-center flex-shrink-0">
@@ -284,44 +320,56 @@ export function StudentWorkDetails() {
                                             {chapter.description && (
                                                 <p className="text-sm text-muted-foreground mb-2">{chapter.description}</p>
                                             )}
-                                            {deadline && (
-                                                <div className={`flex items-center gap-1.5 text-xs ${isOverdue && item?.status !== 'APPROVED' ? 'text-destructive' : 'text-muted-foreground'}`}>
-                                                    <CalendarClock className="w-3.5 h-3.5 flex-shrink-0" />
-                                                    <span>
-                                                        Срок: {format(deadline, 'd MMM yyyy, HH:mm', { locale: ru })}
-                                                        {isOverdue && item?.status !== 'APPROVED'
-                                                            ? ' — просрочено'
-                                                            : ` (${formatDistanceToNow(deadline, { locale: ru, addSuffix: true })})`}
-                                                    </span>
-                                                </div>
-                                            )}
+                                            {deadline && (() => {
+                                                const approved = item?.status === 'APPROVED';
+                                                const overdue = isOverdue && !approved;
+                                                return (
+                                                    <div className={`inline-flex items-center gap-1.5 text-xs px-2 py-1 rounded-full border mt-1 ${approved
+                                                        ? 'bg-success/10 border-success/30 text-success'
+                                                        : overdue
+                                                            ? 'bg-destructive/10 border-destructive/30 text-destructive'
+                                                            : 'bg-muted border-border text-muted-foreground'
+                                                        }`}>
+                                                        <CalendarClock className="w-3 h-3 flex-shrink-0" />
+                                                        <span>{format(deadline, 'd MMM yyyy', { locale: ru })}</span>
+                                                        <span className="opacity-50">·</span>
+                                                        <span>
+                                                            {approved
+                                                                ? 'сдано вовремя'
+                                                                : overdue
+                                                                    ? 'просрочено'
+                                                                    : formatDistanceToNow(deadline, { locale: ru, addSuffix: true })}
+                                                        </span>
+                                                    </div>
+                                                );
+                                            })()}
                                         </div>
                                     </div>
                                     {item ? (
-                                        <span className={`px-3 py-1 rounded-full text-xs font-medium flex items-center gap-1.5 flex-shrink-0 ${statusConfig[item.status].color}`}>
+                                        <Badge variant={statusConfig[item.status].variant} className="flex-shrink-0 gap-1.5">
                                             {(() => { const Icon = statusConfig[item.status].icon; return <Icon className="w-3 h-3" />; })()}
                                             {statusConfig[item.status].label}
-                                        </span>
+                                        </Badge>
                                     ) : (
-                                        <span className="px-3 py-1 rounded-full text-xs font-medium flex items-center gap-1.5 flex-shrink-0 text-muted-foreground bg-muted">
+                                        <Badge variant="outline" className="flex-shrink-0 gap-1.5 text-sm text-muted-foreground">
                                             <FileText className="w-3 h-3" />
                                             Не начат
-                                        </span>
+                                        </Badge>
                                     )}
                                 </div>
 
+                                <Separator className="mb-4 bg-input" />
+
                                 {chapterUnlocked ? (
-                                    <div className="mt-4 pt-4 border-t border-border">
+                                    <div className="space-y-3">
                                         {needsReupload && item && item.history.length > 0 && (
-                                            <div className="mb-4 p-3 bg-destructive/10 border border-destructive/20 rounded-lg">
-                                                <div className="flex items-start gap-2">
-                                                    <AlertCircle className="w-4 h-4 text-destructive flex-shrink-0 mt-0.5" />
-                                                    <div className="text-sm">
-                                                        <div className="font-medium text-card-foreground mb-1">Требуется доработка</div>
-                                                        <p className="text-muted-foreground">
-                                                            {item.history[0]?.teacherComment || 'Работа отклонена преподавателем'}
-                                                        </p>
-                                                    </div>
+                                            <div className="p-3 bg-destructive/10 border border-destructive/20 rounded-lg flex items-start gap-2">
+                                                <AlertCircle className="w-4 h-4 text-destructive flex-shrink-0 mt-0.5" />
+                                                <div className="text-sm">
+                                                    <p className="font-medium text-card-foreground mb-0.5">Требуется доработка</p>
+                                                    <p className="text-muted-foreground">
+                                                        {item.history[0]?.teacherComment || 'Работа отклонена преподавателем'}
+                                                    </p>
                                                 </div>
                                             </div>
                                         )}
@@ -349,50 +397,50 @@ export function StudentWorkDetails() {
                                                         className="hidden"
                                                         accept=".pdf"
                                                     />
-                                                    <label
+                                                    <Label
                                                         htmlFor={fileInputId}
-                                                        className="flex-1 px-4 py-2 border border-border rounded-lg cursor-pointer hover:bg-accent transition-colors text-sm text-muted-foreground flex items-center gap-2"
+                                                        className="flex-1 h-9 px-3 border border-input rounded-md cursor-pointer hover:bg-accent transition-colors text-sm text-muted-foreground flex items-center gap-2 font-normal"
                                                     >
-                                                        <Upload className="w-4 h-4" />
-                                                        {selectedFile && uploadingItemId === uploadKey
-                                                            ? selectedFile.name
-                                                            : item?.fileName || 'Выберите файл (.pdf)'}
-                                                    </label>
+                                                        <Upload className="w-4 h-4 flex-shrink-0" />
+                                                        <span className="truncate">
+                                                            {selectedFile && uploadingItemId === uploadKey
+                                                                ? selectedFile.name
+                                                                : item?.fileName || 'Выберите файл (.pdf)'}
+                                                        </span>
+                                                    </Label>
                                                     {canSubmit && item && (
-                                                        <button
-                                                            onClick={() => handleSubmit(item.id)}
-                                                            className="px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary-hover transition-colors text-sm font-medium whitespace-nowrap"
-                                                        >
+                                                        <Button size="sm" onClick={() => handleSubmit(item.id)}>
                                                             Отправить на проверку
-                                                        </button>
+                                                        </Button>
                                                     )}
                                                 </div>
                                                 {selectedFile && uploadingItemId === uploadKey && (
-                                                    <button
+                                                    <Button
+                                                        variant="outline"
+                                                        className="w-full border-success text-success hover:bg-success/10 hover:text-success"
                                                         onClick={() => handleUpload(uploadKey)}
-                                                        className="mt-2 w-full px-4 py-2 bg-success text-success-foreground rounded-lg hover:opacity-90 transition-opacity text-sm font-medium"
                                                     >
+                                                        <Upload className="w-4 h-4 mr-2" />
                                                         Загрузить файл
-                                                    </button>
+                                                    </Button>
                                                 )}
                                             </>
                                         )}
                                     </div>
                                 ) : (
-                                    <div className="mt-4 pt-4 border-t border-border">
-                                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                                            <AlertCircle className="w-4 h-4" />
-                                            Необходимо одобрение предыдущего раздела
-                                        </div>
+                                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                                        <AlertCircle className="w-4 h-4" />
+                                        Необходимо одобрение предыдущего раздела
                                     </div>
                                 )}
-                            </div>
+                            </CardContent>
 
                             {item && item.history.length > 0 && (
-                                <div className="border-t border-border">
+                                <>
+                                    <Separator className="bg-input" />
                                     <button
                                         onClick={() => setExpandedHistory(expandedHistory === item.id ? null : item.id)}
-                                        className="w-full px-6 py-3 flex items-center justify-between hover:bg-accent transition-colors"
+                                        className="w-full px-6 py-3 flex items-center justify-between hover:bg-accent transition-colors text-left"
                                     >
                                         <span className="text-sm font-medium text-card-foreground flex items-center gap-2">
                                             <History className="w-4 h-4 text-muted-foreground" />
@@ -414,81 +462,44 @@ export function StudentWorkDetails() {
                                                                 {h.fileName ?? '—'}
                                                             </span>
                                                         </div>
-                                                        <span className={`px-2 py-0.5 rounded text-xs font-medium flex-shrink-0 ${statusConfig[h.newStatus]?.color ?? ''}`}>
+                                                        <Badge
+                                                            variant={statusConfig[h.newStatus]?.variant ?? 'secondary'}
+                                                            className="flex-shrink-0 text-xs"
+                                                        >
                                                             {statusConfig[h.newStatus]?.label ?? h.newStatus}
-                                                        </span>
+                                                        </Badge>
                                                     </div>
-                                                    <div className="text-xs text-muted-foreground mb-2">
+                                                    <p className="text-xs text-muted-foreground mb-2">
                                                         {new Date(h.changedAt).toLocaleString('ru-RU')}
-                                                    </div>
+                                                    </p>
                                                     {h.teacherComment && (
-                                                        <div className="mt-3 p-3 bg-background rounded border border-border">
-                                                            <div className="flex items-start gap-2">
-                                                                <User className="w-4 h-4 text-muted-foreground flex-shrink-0 mt-0.5" />
-                                                                <div>
-                                                                    <div className="text-xs text-muted-foreground mb-1">
-                                                                        {h.changedBy?.lastName && h.changedBy?.firstName
-                                                                            ? `${h.changedBy.lastName} ${h.changedBy.firstName[0]}.`
-                                                                            : 'Преподаватель'}
-                                                                    </div>
-                                                                    <p className="text-sm text-card-foreground">{h.teacherComment}</p>
-                                                                </div>
+                                                        <div className="mt-2 p-3 bg-background rounded-md border border-border flex items-start gap-2">
+                                                            <User className="w-4 h-4 text-muted-foreground flex-shrink-0 mt-0.5" />
+                                                            <div>
+                                                                <p className="text-xs text-muted-foreground mb-1">
+                                                                    {h.changedBy?.lastName && h.changedBy?.firstName
+                                                                        ? `${h.changedBy.lastName} ${h.changedBy.firstName[0]}.`
+                                                                        : 'Преподаватель'}
+                                                                </p>
+                                                                <p className="text-sm text-card-foreground">{h.teacherComment}</p>
                                                             </div>
                                                         </div>
                                                     )}
                                                     {h.fileName && (
-                                                        <button className="mt-3 flex items-center gap-2 text-xs text-primary hover:text-primary-hover transition-colors">
+                                                        <Button variant="link" size="sm" className="mt-1 px-0 h-auto text-xs gap-1.5">
                                                             <Download className="w-3 h-3" />
                                                             Скачать файл
-                                                        </button>
+                                                        </Button>
                                                     )}
                                                 </div>
                                             ))}
                                         </div>
                                     )}
-                                </div>
+                                </>
                             )}
-                        </div>
+                        </Card>
                     );
                 })}
-            </div>
-        </div>
-    );
-}
-
-function ProjectSkeleton() {
-    return (
-        <div className="bg-background animate-pulse">
-            <div className="h-5 bg-muted rounded w-32 mb-6" />
-            <div className="bg-card border border-border rounded-lg p-6 mb-6">
-                <div className="flex items-start justify-between gap-4 mb-3">
-                    <div className="h-7 bg-muted rounded w-2/3" />
-                    <div className="h-8 bg-muted rounded w-32" />
-                </div>
-                <div className="h-4 bg-muted rounded w-full mb-1.5" />
-                <div className="h-4 bg-muted rounded w-4/5" />
-                <div className="mt-4 pt-4 border-t border-border flex gap-3">
-                    <div className="h-6 bg-muted rounded-full w-28" />
-                    <div className="h-6 bg-muted rounded-full w-24" />
-                    <div className="h-6 bg-muted rounded-full w-20" />
-                </div>
-            </div>
-            <div className="space-y-4">
-                {[1, 2, 3].map((i) => (
-                    <div key={i} className="bg-card border border-border rounded-lg p-6">
-                        <div className="flex items-start gap-3 mb-4">
-                            <div className="w-10 h-10 bg-muted rounded-lg flex-shrink-0" />
-                            <div className="flex-1">
-                                <div className="h-5 bg-muted rounded w-1/3 mb-2" />
-                                <div className="h-3.5 bg-muted rounded w-3/4" />
-                            </div>
-                            <div className="h-6 bg-muted rounded-full w-24" />
-                        </div>
-                        <div className="pt-4 border-t border-border">
-                            <div className="h-9 bg-muted rounded w-full" />
-                        </div>
-                    </div>
-                ))}
             </div>
         </div>
     );
