@@ -20,7 +20,7 @@ import {
 import { ItemStatus } from '@/types/ItemStatus';
 import { ProjectDetails } from '@/types/ProjectDetails';
 import { AcademicWork } from '@/types/AcademicWork';
-import { getStudentProjectByWorkId, getAcademicWorkById, updateProject } from '@/api/endpoints';
+import { getStudentProjectByWorkId, getAcademicWorkById, updateProject, draftExplanatoryNoteItem, submitExplanatoryNoteItem, downloadExplanatoryNoteFile } from '@/api/endpoints';
 import { toast } from 'sonner';
 import { format, isPast, formatDistanceToNow } from 'date-fns';
 import { ru } from 'date-fns/locale';
@@ -32,6 +32,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 
 const statusConfig: Record<
     ItemStatus,
@@ -43,47 +44,6 @@ const statusConfig: Record<
     REJECTED: { label: 'Отклонено', variant: 'destructive', icon: XCircle },
 };
 
-function ProjectSkeleton() {
-    return (
-        <div className="space-y-6">
-            <Skeleton className="h-5 w-32" />
-            <Card>
-                <CardContent className="p-6 space-y-3">
-                    <div className="flex items-start justify-between gap-4">
-                        <Skeleton className="h-7 w-2/3" />
-                        <Skeleton className="h-8 w-32" />
-                    </div>
-                    <Skeleton className="h-4 w-full" />
-                    <Skeleton className="h-4 w-4/5" />
-                    <div className="flex gap-2 pt-1">
-                        <Skeleton className="h-6 w-28 rounded-full" />
-                        <Skeleton className="h-6 w-24 rounded-full" />
-                        <Skeleton className="h-6 w-20 rounded-full" />
-                    </div>
-                </CardContent>
-            </Card>
-            <div className="space-y-4">
-                {[1, 2, 3].map((i) => (
-                    <Card key={i}>
-                        <CardContent className="p-6">
-                            <div className="flex items-start gap-3 mb-4">
-                                <Skeleton className="w-10 h-10 rounded-lg flex-shrink-0" />
-                                <div className="flex-1 space-y-2">
-                                    <Skeleton className="h-5 w-1/3" />
-                                    <Skeleton className="h-3.5 w-3/4" />
-                                </div>
-                                <Skeleton className="h-6 w-24 rounded-full" />
-                            </div>
-                            <Separator className="mb-4 bg-input" />
-                            <Skeleton className="h-9 w-full" />
-                        </CardContent>
-                    </Card>
-                ))}
-            </div>
-        </div>
-    );
-}
-
 export function StudentWorkDetails() {
     const { id } = useParams<{ id: string }>();
     const navigate = useNavigate();
@@ -94,7 +54,6 @@ export function StudentWorkDetails() {
 
     const [uploadingItemId, setUploadingItemId] = useState<number | null>(null);
     const [selectedFile, setSelectedFile] = useState<File | null>(null);
-    const [expandedHistory, setExpandedHistory] = useState<number | null>(null);
 
     const [isEditing, setIsEditing] = useState(false);
     const [editTitle, setEditTitle] = useState('');
@@ -150,23 +109,25 @@ export function StudentWorkDetails() {
     };
 
     const handleUpload = async (key: number) => {
-        if (!selectedFile) return;
+        if (!selectedFile || !project) return;
         try {
-            const formData = new FormData();
-            formData.append('projectId', id!);
-            formData.append('file', selectedFile);
-            console.log('Uploading file for item:', key);
-            setTimeout(() => { setUploadingItemId(null); setSelectedFile(null); }, 1000);
+            await draftExplanatoryNoteItem(project.id, selectedFile);
+            toast.success('Файл загружен');
+            setUploadingItemId(null);
+            setSelectedFile(null);
+            await fetchData();
         } catch (error) {
-            console.error('Failed to upload file:', error);
+            toast.error(error instanceof Error ? error.message : 'Ошибка загрузки файла');
         }
     };
 
     const handleSubmit = async (itemId: number) => {
         try {
-            console.log('Submitting item:', itemId);
+            await submitExplanatoryNoteItem(itemId);
+            toast.success('Файл отправлен на проверку');
+            await fetchData();
         } catch (error) {
-            console.error('Failed to submit item:', error);
+            toast.error(error instanceof Error ? error.message : 'Ошибка отправки на проверку');
         }
     };
 
@@ -299,16 +260,18 @@ export function StudentWorkDetails() {
                     const deadline = chapter.deadline ? new Date(chapter.deadline) : null;
                     const isOverdue = deadline ? isPast(deadline) : false;
 
+                    console.log(item);
+
                     const prevItem = index === 0 ? null : project.items.find((i) => i.orderNumber === index - 1);
                     const chapterUnlocked = index === 0 || prevItem?.status === 'APPROVED';
 
-                    const canSubmit = item?.status === 'DRAFT' && item?.fileName;
+                    const canSubmit = item?.status === 'DRAFT';
                     const needsReupload = item?.status === 'REJECTED';
                     const fileInputId = `file-chapter-${index}`;
                     const uploadKey = item?.id ?? -(index + 1);
 
                     return (
-                        <Card key={chapter.index} className="overflow-hidden">
+                        <Card key={chapter.index} className="overflow-hidden py-0">
                             <CardContent className="p-6">
                                 <div className="flex items-start justify-between gap-4 mb-4">
                                     <div className="flex items-start gap-3 flex-1">
@@ -346,7 +309,7 @@ export function StudentWorkDetails() {
                                         </div>
                                     </div>
                                     {item ? (
-                                        <Badge variant={statusConfig[item.status].variant} className="flex-shrink-0 gap-1.5">
+                                        <Badge variant={statusConfig[item.status].variant} className="flex-shrink-0 gap-1.5 text-sm">
                                             {(() => { const Icon = statusConfig[item.status].icon; return <Icon className="w-3 h-3" />; })()}
                                             {statusConfig[item.status].label}
                                         </Badge>
@@ -361,7 +324,7 @@ export function StudentWorkDetails() {
                                 <Separator className="mb-4 bg-input" />
 
                                 {chapterUnlocked ? (
-                                    <div className="space-y-3">
+                                    <div className="space-y-3 mb-4">
                                         {needsReupload && item && item.history.length > 0 && (
                                             <div className="p-3 bg-destructive/10 border border-destructive/20 rounded-lg flex items-start gap-2">
                                                 <AlertCircle className="w-4 h-4 text-destructive flex-shrink-0 mt-0.5" />
@@ -417,7 +380,7 @@ export function StudentWorkDetails() {
                                                 {selectedFile && uploadingItemId === uploadKey && (
                                                     <Button
                                                         variant="outline"
-                                                        className="w-full border-success text-success hover:bg-success/10 hover:text-success"
+                                                        className="w-full border-success text-success hover:bg-success/10 hover:text-success focus:ring-success"
                                                         onClick={() => handleUpload(uploadKey)}
                                                     >
                                                         <Upload className="w-4 h-4 mr-2" />
@@ -428,78 +391,126 @@ export function StudentWorkDetails() {
                                         )}
                                     </div>
                                 ) : (
-                                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                                    <div className="flex items-center gap-2 text-sm text-muted-foreground mb-4">
                                         <AlertCircle className="w-4 h-4" />
                                         Необходимо одобрение предыдущего раздела
                                     </div>
                                 )}
+
+                                {item && item.history.length > 0 && (
+                                    <>
+                                        <Separator className="bg-input" />
+                                        <Accordion type="single" collapsible className="mt-4">
+                                            <AccordionItem value="history" className="border-none">
+                                                <AccordionTrigger className="p-3 text-sm font-medium text-card-foreground hover:bg-accent transition-colors hover:no-underline gap-2 mb-4">
+                                                    <span className="flex items-center gap-2">
+                                                        <History className="w-4 h-4 text-muted-foreground" />
+                                                        История ({item.history.length})
+                                                    </span>
+                                                </AccordionTrigger>
+                                                <AccordionContent className="pb-4">
+                                                    <div className="space-y-3">
+                                                        {item.history.map((h) => (
+                                                            <div key={h.id} className="p-4 bg-muted/40 rounded-lg border border-border">
+                                                                <div className="flex items-center justify-between gap-4">
+                                                                    <div className="flex items-center gap-2 min-w-0">
+                                                                        {h.fileName && <FileText className="w-4 h-4 text-muted-foreground flex-shrink-0" />}
+                                                                        <span className={`text-sm font-medium truncate ${h.fileName ? 'text-card-foreground' : 'text-muted-foreground'}`}>
+                                                                            {h.fileName ?? statusConfig[h.newStatus]?.label}
+                                                                        </span>
+                                                                    </div>
+                                                                    <div className="flex items-center gap-2 flex-shrink-0">
+                                                                        <span className="text-xs text-muted-foreground">
+                                                                            {new Date(h.changedAt).toLocaleString('ru-RU')}
+                                                                        </span>
+                                                                        {h.fileName && (
+                                                                            <Badge variant={statusConfig[h.newStatus]?.variant ?? 'secondary'} className="text-xs">
+                                                                                {statusConfig[h.newStatus]?.label ?? h.newStatus}
+                                                                            </Badge>
+                                                                        )}
+                                                                    </div>
+                                                                </div>
+                                                                {h.teacherComment && (
+                                                                    <div className="mt-2 p-3 bg-background rounded-md border border-border flex items-start gap-2">
+                                                                        <User className="w-4 h-4 text-muted-foreground flex-shrink-0 mt-0.5" />
+                                                                        <div>
+                                                                            <p className="text-xs text-muted-foreground mb-1">
+                                                                                {h.changedBy?.lastName && h.changedBy?.firstName
+                                                                                    ? `${h.changedBy.lastName} ${h.changedBy.firstName[0]}.`
+                                                                                    : 'Преподаватель'}
+                                                                            </p>
+                                                                            <p className="text-sm text-card-foreground">{h.teacherComment}</p>
+                                                                        </div>
+                                                                    </div>
+                                                                )}
+                                                                {h.fileName && (
+                                                                    <Button
+                                                                        variant="link"
+                                                                        size="sm"
+                                                                        className="mt-3 px-0 h-auto text-xs gap-1.5"
+                                                                        onClick={() =>
+                                                                            downloadExplanatoryNoteFile(project.id, item.id, h.id)
+                                                                                .catch((e) => toast.error(e instanceof Error ? e.message : 'Ошибка скачивания'))
+                                                                        }
+                                                                    >
+                                                                        <Download className="w-3 h-3" />
+                                                                        Скачать файл
+                                                                    </Button>
+                                                                )}
+                                                            </div>
+                                                        ))}
+                                                    </div>
+                                                </AccordionContent>
+                                            </AccordionItem>
+                                        </Accordion>
+                                    </>
+                                )}
                             </CardContent>
 
-                            {item && item.history.length > 0 && (
-                                <>
-                                    <Separator className="bg-input" />
-                                    <button
-                                        onClick={() => setExpandedHistory(expandedHistory === item.id ? null : item.id)}
-                                        className="w-full px-6 py-3 flex items-center justify-between hover:bg-accent transition-colors text-left"
-                                    >
-                                        <span className="text-sm font-medium text-card-foreground flex items-center gap-2">
-                                            <History className="w-4 h-4 text-muted-foreground" />
-                                            История ({item.history.length})
-                                        </span>
-                                        <span className="text-xs text-muted-foreground">
-                                            {expandedHistory === item.id ? 'Скрыть' : 'Показать'}
-                                        </span>
-                                    </button>
-
-                                    {expandedHistory === item.id && (
-                                        <div className="px-6 pb-4 space-y-3">
-                                            {item.history.map((h) => (
-                                                <div key={h.id} className="p-4 bg-muted/40 rounded-lg border border-border">
-                                                    <div className="flex items-start justify-between gap-4 mb-2">
-                                                        <div className="flex items-center gap-2 min-w-0">
-                                                            <FileText className="w-4 h-4 text-muted-foreground flex-shrink-0" />
-                                                            <span className="text-sm font-medium text-card-foreground truncate">
-                                                                {h.fileName ?? '—'}
-                                                            </span>
-                                                        </div>
-                                                        <Badge
-                                                            variant={statusConfig[h.newStatus]?.variant ?? 'secondary'}
-                                                            className="flex-shrink-0 text-xs"
-                                                        >
-                                                            {statusConfig[h.newStatus]?.label ?? h.newStatus}
-                                                        </Badge>
-                                                    </div>
-                                                    <p className="text-xs text-muted-foreground mb-2">
-                                                        {new Date(h.changedAt).toLocaleString('ru-RU')}
-                                                    </p>
-                                                    {h.teacherComment && (
-                                                        <div className="mt-2 p-3 bg-background rounded-md border border-border flex items-start gap-2">
-                                                            <User className="w-4 h-4 text-muted-foreground flex-shrink-0 mt-0.5" />
-                                                            <div>
-                                                                <p className="text-xs text-muted-foreground mb-1">
-                                                                    {h.changedBy?.lastName && h.changedBy?.firstName
-                                                                        ? `${h.changedBy.lastName} ${h.changedBy.firstName[0]}.`
-                                                                        : 'Преподаватель'}
-                                                                </p>
-                                                                <p className="text-sm text-card-foreground">{h.teacherComment}</p>
-                                                            </div>
-                                                        </div>
-                                                    )}
-                                                    {h.fileName && (
-                                                        <Button variant="link" size="sm" className="mt-1 px-0 h-auto text-xs gap-1.5">
-                                                            <Download className="w-3 h-3" />
-                                                            Скачать файл
-                                                        </Button>
-                                                    )}
-                                                </div>
-                                            ))}
-                                        </div>
-                                    )}
-                                </>
-                            )}
                         </Card>
                     );
                 })}
+            </div>
+        </div>
+    );
+}
+
+function ProjectSkeleton() {
+    return (
+        <div className="space-y-6">
+            <Skeleton className="h-5 w-32" />
+            <Card>
+                <CardContent className="p-6 space-y-3">
+                    <div className="flex items-start justify-between gap-4">
+                        <Skeleton className="h-7 w-2/3" />
+                        <Skeleton className="h-8 w-32" />
+                    </div>
+                    <Skeleton className="h-4 w-full" />
+                    <Skeleton className="h-4 w-4/5" />
+                    <div className="flex gap-2 pt-1">
+                        <Skeleton className="h-6 w-28 rounded-full" />
+                        <Skeleton className="h-6 w-24 rounded-full" />
+                        <Skeleton className="h-6 w-20 rounded-full" />
+                    </div>
+                </CardContent>
+            </Card>
+            <div className="space-y-4">
+                {[1, 2, 3].map((i) => (
+                    <Card key={i}>
+                        <CardContent className="p-6">
+                            <div className="flex items-start gap-3 mb-4">
+                                <Skeleton className="w-10 h-10 rounded-lg flex-shrink-0" />
+                                <div className="flex-1 space-y-2">
+                                    <Skeleton className="h-5 w-1/3" />
+                                    <Skeleton className="h-3.5 w-3/4" />
+                                </div>
+                                <Skeleton className="h-6 w-24 rounded-full" />
+                            </div>
+                            <Separator className="mb-4 bg-input" />
+                            <Skeleton className="h-9 w-full" />
+                        </CardContent>
+                    </Card>
+                ))}
             </div>
         </div>
     );

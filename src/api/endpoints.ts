@@ -381,6 +381,19 @@ export const getStudentProjectByWorkId = async (workId: number): Promise<Project
     }
 };
 
+export const getProjectById = async (projectId: number): Promise<ProjectDetails> => {
+    try {
+        const response = await axios.get<ProjectDetails>(`/project/${projectId}`);
+
+        if (response.status !== HttpStatusCode.Ok)
+            throw new Error("Project fetch failed");
+
+        return response.data;
+    } catch (error) {
+        throw error instanceof Error ? error : new Error("Network error");
+    }
+};
+
 export const updateProject = async (dto: UpdateProject): Promise<void> => {
     try {
         const response = await axios.put('/project', dto);
@@ -389,5 +402,61 @@ export const updateProject = async (dto: UpdateProject): Promise<void> => {
             throw new Error('Project update failed');
     } catch (error) {
         throw error instanceof Error ? error : new Error('Network error');
+    }
+};
+
+export const draftExplanatoryNoteItem = async (projectId: number, file: File): Promise<void> => {
+    try {
+        const formData = new FormData();
+        formData.append('projectId', String(projectId));
+        formData.append('file', file);
+
+        const response = await axios.post('/explanatory-note-item/draft', formData, {
+            headers: { 'Content-Type': 'multipart/form-data' },
+        });
+
+        if (response.status !== HttpStatusCode.Created)
+            throw new Error('Draft creation failed');
+    } catch (error) {
+        throw error instanceof Error ? error : new Error('Network error');
+    }
+};
+
+export const submitExplanatoryNoteItem = async (itemId: number): Promise<void> => {
+    try {
+        const response = await axios.post(`/explanatory-note-item/${itemId}/submition`);
+
+        if (response.status !== HttpStatusCode.Ok)
+            throw new Error('Submit failed');
+    } catch (error) {
+        throw error instanceof Error ? error : new Error('Network error');
+    }
+};
+
+export const downloadExplanatoryNoteFile = async (
+    projectId: number,
+    itemId: number,
+    historyId?: number,
+): Promise<void> => {
+    try {
+        const response = await axios.get('/explanatory-note-item/file', {
+            params: { projectId, itemId, ...(historyId != null ? { historyId } : {}) },
+            responseType: 'blob',
+        });
+
+        const disposition = response.headers['content-disposition'] as string | undefined;
+        const match = disposition?.match(/filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/);
+        const fileName = match?.[1]?.replace(/['"]/g, '') ?? `file-${itemId}.pdf`;
+
+        const url = window.URL.createObjectURL(new Blob([response.data]));
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = fileName;
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+        window.URL.revokeObjectURL(url);
+    } catch (error) {
+        throw error instanceof Error ? error : new Error('Download failed');
     }
 };
