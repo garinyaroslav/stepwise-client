@@ -150,7 +150,7 @@ export function StudentWorkDetails() {
         );
     }
 
-    const allItemsApproved = project.items.length > 0 && project.items.every((i) => i.status === 'APPROVED');
+    const allItemsApproved = work.chapters.length === project.items.length && project.items.every((i) => i.status === ItemStatus.APPROVED);
     const chapters = work.chapters ?? [];
 
     return (
@@ -227,16 +227,20 @@ export function StudentWorkDetails() {
                     )}
 
                     {!isEditing && allItemsApproved && (
-                        <div className={`mt-5 p-4 rounded-lg border ${project.isApprovedForDefense ? 'bg-success/10 border-success' : 'bg-chart-4/10 border-chart-4'}`}>
-                            {project.isApprovedForDefense ? (
+                        <div className={`mt-5 p-4 rounded-lg border ${project.approvedForDefense ? 'bg-success/10 border-success' : 'bg-chart-4/10 border-chart-4'}`}>
+                            {project.approvedForDefense ? (
                                 <div className="flex items-start gap-3">
                                     <CheckCircle className="w-5 h-5 text-success flex-shrink-0 mt-0.5" />
                                     <div>
                                         <p className="font-semibold text-card-foreground mb-1">Допущен к защите</p>
                                         <p className="text-sm text-muted-foreground">Свяжитесь с преподавателем для согласования даты защиты.</p>
-                                        <Button variant="link" size="sm" className="px-0 mt-1 h-auto text-primary">
-                                            <Mail className="w-3.5 h-3.5 mr-1.5" />
-                                            Написать преподавателю
+                                        <Button asChild variant="link" size="sm" className="px-0 mt-1 h-auto">
+                                            <a
+                                                href={`mailto:${work.teacherEmail}?subject=${encodeURIComponent(`Вопрос от ученика о защете курсовой: ${work.title}`)}&body=${encodeURIComponent("Здравствуйте!\n\nКогда можно защитить работу?")}`}
+                                            >
+                                                <Mail className="w-3.5 h-3.5 mr-1.5" />
+                                                Написать преподавателю
+                                            </a>
                                         </Button>
                                     </div>
                                 </div>
@@ -260,13 +264,11 @@ export function StudentWorkDetails() {
                     const deadline = chapter.deadline ? new Date(chapter.deadline) : null;
                     const isOverdue = deadline ? isPast(deadline) : false;
 
-                    console.log(item);
-
                     const prevItem = index === 0 ? null : project.items.find((i) => i.orderNumber === index - 1);
-                    const chapterUnlocked = index === 0 || prevItem?.status === 'APPROVED';
+                    const chapterUnlocked = index === 0 || prevItem?.status === ItemStatus.APPROVED;
 
-                    const canSubmit = item?.status === 'DRAFT';
-                    const needsReupload = item?.status === 'REJECTED';
+                    const canSubmit = item?.status === ItemStatus.DRAFT;
+                    const needsReupload = item?.status === ItemStatus.REJECTED;
                     const fileInputId = `file-chapter-${index}`;
                     const uploadKey = item?.id ?? -(index + 1);
 
@@ -284,7 +286,7 @@ export function StudentWorkDetails() {
                                                 <p className="text-sm text-muted-foreground mb-2">{chapter.description}</p>
                                             )}
                                             {deadline && (() => {
-                                                const approved = item?.status === 'APPROVED';
+                                                const approved = item?.status === ItemStatus.APPROVED;
                                                 const overdue = isOverdue && !approved;
                                                 return (
                                                     <div className={`inline-flex items-center gap-1.5 text-xs px-2 py-1 rounded-full border mt-1 ${approved
@@ -298,9 +300,9 @@ export function StudentWorkDetails() {
                                                         <span className="opacity-50">·</span>
                                                         <span>
                                                             {approved
-                                                                ? 'сдано вовремя'
+                                                                ? 'Cдано вовремя'
                                                                 : overdue
-                                                                    ? 'просрочено'
+                                                                    ? 'Просрочено'
                                                                     : formatDistanceToNow(deadline, { locale: ru, addSuffix: true })}
                                                         </span>
                                                     </div>
@@ -337,12 +339,12 @@ export function StudentWorkDetails() {
                                             </div>
                                         )}
 
-                                        {item?.status === 'APPROVED' ? (
+                                        {item?.status === ItemStatus.APPROVED ? (
                                             <div className="flex items-center gap-2 text-sm text-success">
                                                 <CheckCircle className="w-4 h-4" />
                                                 Раздел одобрен преподавателем
                                             </div>
-                                        ) : item?.status === 'SUBMITTED' ? (
+                                        ) : item?.status === ItemStatus.SUBMITTED ? (
                                             <div className="flex items-center gap-2 text-sm text-chart-4">
                                                 <Clock className="w-4 h-4" />
                                                 Файл отправлен на проверку, ожидайте ответа преподавателя

@@ -7,5 +7,5 @@ export interface ProjectDetails {
     description: string;
     owner: UserWithProfile;
     items: ExplanatoryNoteItem[];
-    isApprovedForDefense: boolean;
+    approvedForDefense: boolean;
 }
