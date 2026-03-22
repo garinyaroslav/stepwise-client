@@ -1,11 +1,11 @@
 import { useState } from 'react';
 import {
-    X, FileText, Download, CheckCircle, XCircle, Clock, User,
+    FileText, Download, CheckCircle, XCircle, Clock, User,
     MessageSquare, AlertCircle, History, ArrowRight,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
 import { cn } from '@/lib/utils';
 
 type ItemStatus = 'DRAFT' | 'SUBMITTED' | 'APPROVED' | 'REJECTED';
@@ -97,7 +97,6 @@ export function ItemHistoryModal({ item, project, chapterTitle, onClose, onUpdat
     return (
         <Dialog open onOpenChange={(open) => !open && onClose()}>
             <DialogContent className="max-w-2xl max-h-[88vh] flex flex-col p-0 gap-0 overflow-hidden">
-                {/* Header */}
                 <div className="p-6 border-b border-border">
                     <div className="flex items-start justify-between gap-4">
                         <div className="flex-1 min-w-0">
@@ -115,7 +114,6 @@ export function ItemHistoryModal({ item, project, chapterTitle, onClose, onUpdat
                                 </div>
                             </div>
                         </div>
-                        {/* DialogContent already adds a close button via shadcn, but we keep custom one if needed */}
                     </div>
 
                     {tabs.length > 1 && (
@@ -324,7 +322,6 @@ export function ItemHistoryModal({ item, project, chapterTitle, onClose, onUpdat
                     )}
                 </div>
 
-                {/* Footer */}
                 <div className="px-6 py-4 border-t border-border bg-muted/30">
                     <Button variant="outline" onClick={onClose} className="w-full">
                         Закрыть

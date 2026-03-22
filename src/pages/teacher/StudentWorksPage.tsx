@@ -388,61 +388,87 @@ export function StudentWorksPage() {
                     <p className="text-muted-foreground text-sm">По данной работе нет проектов студентов</p>
                 </div>
             ) : (
-                <div className="bg-card border border-border rounded-xl overflow-hidden">
-                    <div className="px-6 py-4 border-b border-border flex items-center justify-between bg-card">
-                        <div>
-                            <h2 className="font-semibold text-card-foreground">{selectedWork?.title}</h2>
-                            <p className="text-xs text-muted-foreground mt-0.5">{selectedGroup?.name} · {projects.length} студентов</p>
-                        </div>
+                <div className="bg-card border border-border rounded-xl">
+                    <div className="px-6 py-4 border-b border-border bg-card rounded-t-xl">
+                        <h2 className="font-semibold text-card-foreground">{selectedWork?.title}</h2>
+                        <p className="text-xs text-muted-foreground mt-0.5">
+                            {selectedGroup?.name} · {projects.length} студентов
+                        </p>
                     </div>
+
                     <div className="overflow-x-auto">
                         <table className="w-full border-collapse">
                             <thead>
-                                <tr className="bg-muted/60 border-b border-border">
-                                    <th className="px-5 py-3.5 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wide sticky left-0 bg-muted/60 z-10 min-w-[220px]">
+                                <tr className="border-b border-border">
+                                    <th
+                                        className="px-6 py-4 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wide
+               min-w-[220px] bg-muted/60 border-r border-border/80"
+                                    >
                                         Студент
                                     </th>
+
                                     {selectedWork?.chapters.map((chapter) => (
-                                        <th key={chapter.index} className="px-4 py-3.5 text-left text-xs font-semibold text-muted-foreground uppercase tracking-wide min-w-[160px]">
-                                            <div className="text-card-foreground normal-case font-semibold text-sm">{chapter.title}</div>
+                                        <th
+                                            key={chapter.index}
+                                            className="px-5 py-4 text-left bg-muted/60 min-w-[185px]"
+                                        >
+                                            <div className="text-card-foreground font-semibold text-sm">
+                                                {chapter.title}
+                                            </div>
                                             {chapter.deadline && (
-                                                <div className="text-xs font-normal text-muted-foreground mt-0.5 normal-case tracking-normal">
+                                                <div className="text-xs text-muted-foreground mt-1">
                                                     до {new Date(chapter.deadline).toLocaleDateString('ru-RU')}
                                                 </div>
                                             )}
                                         </th>
                                     ))}
-                                    <th className="px-4 py-3.5 text-center text-xs font-semibold text-muted-foreground uppercase tracking-wide min-w-[120px]">
+
+                                    <th
+                                        className="px-6 py-4 text-center text-xs font-semibold text-muted-foreground uppercase tracking-wide
+               min-w-[150px] bg-muted/60 border-l border-border/80"
+                                    >
                                         Защита
                                     </th>
                                 </tr>
                             </thead>
+
                             <tbody className="divide-y divide-border">
                                 {projects.map((project, rowIdx) => {
-                                    const allApproved = project.items.every((item) => item.status === 'APPROVED');
+                                    const allApproved = project.items.every((i) => i.status === 'APPROVED');
                                     const approvedCount = project.items.filter((i) => i.status === 'APPROVED').length;
                                     const totalCount = project.items.length;
 
                                     return (
-                                        <tr key={project.id} className={`transition-colors hover:bg-accent/40 ${rowIdx % 2 === 0 ? '' : 'bg-muted/20'}`}>
-                                            <td className={`px-5 py-3.5 sticky left-0 z-10 ${rowIdx % 2 === 0 ? 'bg-card' : 'bg-muted/20'} hover:bg-accent/40`}>
+                                        <tr
+                                            key={project.id}
+                                            className={`transition-colors hover:bg-accent/40 bg-card`}
+                                        >
+                                            <td className={`
+                                                    px-6 py-4 sticky left-0 z-30 border-r border-border bg-card
+                                                    shadow-[2px_0_8px_-2px_rgb(0,0,0,0.07)]
+                                                `}>
                                                 <div className="flex items-center gap-3">
-                                                    <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
-                                                        <span className="text-xs font-semibold text-primary">
+                                                    <div className="w-9 h-9 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
+                                                        <span className="text-sm font-semibold text-primary">
                                                             {project.owner.lastName[0]}{project.owner.firstName[0]}
                                                         </span>
                                                     </div>
                                                     <div>
-                                                        <div className="font-medium text-card-foreground text-sm">
+                                                        <div className="font-medium text-card-foreground">
                                                             {project.owner.lastName} {project.owner.firstName[0]}.{project.owner.middleName?.[0]}.
                                                         </div>
-                                                        <div className="flex items-center gap-2 mt-0.5">
+                                                        <div className="flex items-center gap-2 mt-1">
                                                             <div className="flex gap-0.5">
                                                                 {project.items.map((item) => (
-                                                                    <div key={item.id} className={`w-1.5 h-1.5 rounded-full ${statusConfig[item.status].dotColor}`} />
+                                                                    <div
+                                                                        key={item.id}
+                                                                        className={`w-1.5 h-1.5 rounded-full ${statusConfig[item.status].dotColor}`}
+                                                                    />
                                                                 ))}
                                                             </div>
-                                                            <span className="text-xs text-muted-foreground">{approvedCount}/{totalCount}</span>
+                                                            <span className="text-xs text-muted-foreground">
+                                                                {approvedCount}/{totalCount}
+                                                            </span>
                                                         </div>
                                                     </div>
                                                 </div>
@@ -450,44 +476,51 @@ export function StudentWorksPage() {
 
                                             {selectedWork?.chapters.map((chapter) => {
                                                 const item = project.items.find((i) => i.orderNumber === chapter.index);
-                                                if (!item) return <td key={chapter.index} className="px-4 py-3.5" />;
+                                                if (!item) return <td key={chapter.index} className="px-5 py-4" />;
+
                                                 const cfg = statusConfig[item.status];
                                                 const StatusIcon = cfg.icon;
                                                 const isClickable = item.status !== 'DRAFT';
+
                                                 return (
-                                                    <td key={chapter.index} className="px-4 py-3.5">
+                                                    <td key={chapter.index} className="px-5 py-4">
                                                         <button
                                                             onClick={() => handleItemClick(item, project)}
                                                             disabled={!isClickable}
-                                                            title={isClickable ? `Открыть историю: ${chapter.title}` : 'Нет данных'}
                                                             className={`
-                                                                w-full px-3 py-2 rounded-lg border flex items-center gap-2 transition-all text-left
-                                                                ${cfg.bgColor} ${cfg.borderColor}
-                                                                ${isClickable ? 'hover:opacity-80 hover:shadow-sm cursor-pointer active:scale-95' : 'opacity-40 cursor-default'}
-                                                            `}
+                                                    w-full px-4 py-3 rounded-2xl border flex items-center gap-2.5 text-left transition-all
+                                                    ${cfg.bgColor} ${cfg.borderColor}
+                                                    ${isClickable
+                                                                    ? 'hover:shadow hover:-translate-y-px active:scale-[0.985] cursor-pointer'
+                                                                    : 'opacity-40 cursor-default'
+                                                                }
+                                                `}
                                                         >
-                                                            <StatusIcon className={`w-3.5 h-3.5 flex-shrink-0 ${cfg.color}`} />
-                                                            <span className={`text-xs font-medium ${cfg.color}`}>{cfg.label}</span>
+                                                            <StatusIcon className={`w-4 h-4 ${cfg.color}`} />
+                                                            <span className={`font-medium text-sm ${cfg.color}`}>{cfg.label}</span>
                                                         </button>
                                                     </td>
                                                 );
                                             })}
 
-                                            <td className="px-4 py-3.5">
+                                            <td className={`
+                                                    px-6 py-4 sticky right-0 z-30 border-l border-border
+                                                    bg-card
+                                                `}>
                                                 <div className="flex justify-center">
                                                     {project.isApprovedForDefense ? (
-                                                        <div className="flex items-center gap-1.5 px-3 py-1.5 bg-success/10 border border-success/30 rounded-lg">
-                                                            <CheckCircle className="w-3.5 h-3.5 text-success" />
-                                                            <span className="text-xs font-medium text-success">Допущен</span>
+                                                        <div className="inline-flex items-center gap-2 px-6 py-2.5 bg-success/10 border border-success/30 rounded-2xl">
+                                                            <CheckCircle className="w-4 h-4 text-success" />
+                                                            <span className="text-sm font-medium text-success">Допущен</span>
                                                         </div>
                                                     ) : allApproved ? (
-                                                        <Button size="sm" onClick={() => handleApproveDefense(project.id)}>
+                                                        <Button size="sm" variant="default" onClick={() => handleApproveDefense(project.id)}>
                                                             Допустить
                                                         </Button>
                                                     ) : (
-                                                        <div className="flex items-center gap-1.5 px-3 py-1.5 bg-muted border border-border rounded-lg">
-                                                            <Clock className="w-3.5 h-3.5 text-muted-foreground" />
-                                                            <span className="text-xs text-muted-foreground">Ожидание</span>
+                                                        <div className="inline-flex items-center gap-2 px-6 py-2.5 bg-muted border border-border rounded-2xl">
+                                                            <Clock className="w-4 h-4 text-muted-foreground" />
+                                                            <span className="text-sm text-muted-foreground">Ожидание</span>
                                                         </div>
                                                     )}
                                                 </div>
@@ -499,29 +532,34 @@ export function StudentWorksPage() {
                         </table>
                     </div>
                 </div>
-            )}
+            )
+            }
 
-            {!isLoading && projects.length > 0 && (
-                <div className="flex items-center gap-6 px-1">
-                    <span className="text-xs text-muted-foreground">Статусы:</span>
-                    {(Object.entries(statusConfig) as [ItemStatus, typeof statusConfig[ItemStatus]][]).map(([key, cfg]) => (
-                        <div key={key} className="flex items-center gap-1.5">
-                            <div className={cn('w-2 h-2 rounded-full', cfg.dotColor)} />
-                            <span className="text-xs text-muted-foreground">{cfg.label}</span>
-                        </div>
-                    ))}
-                </div>
-            )}
+            {
+                !isLoading && projects.length > 0 && (
+                    <div className="flex items-center gap-6 px-1">
+                        <span className="text-xs text-muted-foreground">Статусы:</span>
+                        {(Object.entries(statusConfig) as [ItemStatus, typeof statusConfig[ItemStatus]][]).map(([key, cfg]) => (
+                            <div key={key} className="flex items-center gap-1.5">
+                                <div className={cn('w-2 h-2 rounded-full', cfg.dotColor)} />
+                                <span className="text-xs text-muted-foreground">{cfg.label}</span>
+                            </div>
+                        ))}
+                    </div>
+                )
+            }
 
-            {selectedItem && (
-                <ItemHistoryModal
-                    item={selectedItem.item}
-                    project={selectedItem.project}
-                    chapterTitle={selectedItem.chapterTitle}
-                    onClose={() => setSelectedItem(null)}
-                    onUpdate={() => setSelectedItem(null)}
-                />
-            )}
-        </div>
+            {
+                selectedItem && (
+                    <ItemHistoryModal
+                        item={selectedItem.item}
+                        project={selectedItem.project}
+                        chapterTitle={selectedItem.chapterTitle}
+                        onClose={() => setSelectedItem(null)}
+                        onUpdate={() => setSelectedItem(null)}
+                    />
+                )
+            }
+        </div >
     );
 }
