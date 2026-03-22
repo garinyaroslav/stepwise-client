@@ -460,3 +460,20 @@ export const downloadExplanatoryNoteFile = async (
         throw error instanceof Error ? error : new Error('Download failed');
     }
 };
+
+export const getProjectsByWorkForTeacher = async (workId: number): Promise<ProjectDetails[]> => {
+    const response = await axios.get<ProjectDetails[]>(`/project/work/${workId}/teacher`);
+    return response.data;
+};
+
+export const approveProjectForDefense = async (projectId: number): Promise<void> => {
+    await axios.post(`/project/${projectId}/approval`);
+};
+
+export const approveExplanatoryNoteItem = async (itemId: number, teacherComment: string): Promise<void> => {
+    await axios.post(`/explanatory-note-item/${itemId}/approval`, { teacherComment });
+};
+
+export const rejectExplanatoryNoteItem = async (itemId: number, teacherComment: string): Promise<void> => {
+    await axios.post(`/explanatory-note-item/${itemId}/rejection`, { teacherComment });
+};
