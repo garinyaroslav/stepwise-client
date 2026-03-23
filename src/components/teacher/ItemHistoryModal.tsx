@@ -53,7 +53,7 @@ export function ItemHistoryModal() {
         try {
             await approveExplanatoryNoteItem(item.id, comment.trim() || ' ');
             setMessage({ type: 'success', text: 'Работа успешно одобрена' });
-            setTimeout(() => handleClose(), 1200);
+            handleClose();
         } catch {
             setMessage({ type: 'error', text: 'Ошибка при одобрении работы' });
         } finally {
@@ -71,7 +71,7 @@ export function ItemHistoryModal() {
         try {
             await rejectExplanatoryNoteItem(item.id, comment);
             setMessage({ type: 'success', text: 'Работа отклонена' });
-            setTimeout(() => handleClose(), 1200);
+            handleClose();
         } catch {
             setMessage({ type: 'error', text: 'Ошибка при отклонении работы' });
         } finally {
@@ -81,7 +81,7 @@ export function ItemHistoryModal() {
 
     const handleDownload = async (historyId: number) => {
         try {
-            await downloadExplanatoryNoteFile(project.id, item.id, historyId);
+            await downloadExplanatoryNoteFile(project.owner.id, project.id, item.id, historyId);
         } catch {
             setMessage({ type: 'error', text: 'Ошибка при скачивании файла' });
         }

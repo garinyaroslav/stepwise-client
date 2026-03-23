@@ -55,7 +55,7 @@ export function StudentWorksTablePage() {
     }, [id]);
 
     const handleItemClick = (item: ExplanatoryNoteItem, project: ProjectDetails) => {
-        if (item.status === 'DRAFT') return;
+        if (item.status === ItemStatus.DRAFT) return;
         navigate(
             `/teacher/dashboard/works/${id}/item/${item.id}`,
             {
@@ -210,9 +210,9 @@ export function StudentWorksTablePage() {
                             </thead>
                             <tbody className="divide-y divide-border">
                                 {projects.map((project) => {
-                                    const allApproved = project.items.every((i) => i.status === 'APPROVED');
-                                    const approvedCount = project.items.filter((i) => i.status === 'APPROVED').length;
-                                    const totalCount = project.items.length;
+                                    const totalWorkCount = work?.chapters.length;
+                                    const allApproved = project.items.every((i) => i.status === ItemStatus.APPROVED) && project.items.length === totalWorkCount;
+                                    const approvedCount = project.items.filter((i) => i.status === ItemStatus.APPROVED).length;
 
                                     return (
                                         <tr key={project.id} className="transition-colors hover:bg-accent/40 bg-card">
@@ -233,7 +233,7 @@ export function StudentWorksTablePage() {
                                                                     <div key={item.id} className={`w-1.5 h-1.5 rounded-full ${statusConfig[item.status].dotColor}`} />
                                                                 ))}
                                                             </div>
-                                                            <span className="text-xs text-muted-foreground">{approvedCount}/{totalCount}</span>
+                                                            <span className="text-xs text-muted-foreground">{approvedCount}/{totalWorkCount}</span>
                                                         </div>
                                                     </div>
                                                 </div>
@@ -245,7 +245,7 @@ export function StudentWorksTablePage() {
 
                                                 const cfg = statusConfig[item.status];
                                                 const StatusIcon = cfg.icon;
-                                                const isClickable = item.status !== 'DRAFT';
+                                                const isClickable = item.status !== ItemStatus.DRAFT;
 
                                                 return (
                                                     <td key={chapter.index} className="px-5 py-4">

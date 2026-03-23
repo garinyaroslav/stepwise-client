@@ -434,19 +434,20 @@ export const submitExplanatoryNoteItem = async (itemId: number): Promise<void> =
 };
 
 export const downloadExplanatoryNoteFile = async (
+    userId: number | null = null,
     projectId: number,
     itemId: number,
     historyId?: number,
 ): Promise<void> => {
     try {
         const response = await axios.get('/explanatory-note-item/file', {
-            params: { projectId, itemId, ...(historyId != null ? { historyId } : {}) },
+            params: { userId, projectId, itemId, ...(historyId != null ? { historyId } : {}) },
             responseType: 'blob',
         });
 
         const disposition = response.headers['content-disposition'] as string | undefined;
-        const match = disposition?.match(/filename[^;=\n]*=((['"]).*?\2|[^;\n]*)/);
-        const fileName = match?.[1]?.replace(/['"]/g, '') ?? `file-${itemId}.pdf`;
+        const utf8Match = disposition?.match(/filename\*=UTF-8''([^;\n\r]*)/i);
+        const fileName = utf8Match?.[1] ? decodeURIComponent(utf8Match[1]) : `file-${itemId}.pdf`;
 
         const url = window.URL.createObjectURL(new Blob([response.data]));
         const link = document.createElement('a');

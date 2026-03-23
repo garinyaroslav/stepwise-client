@@ -451,7 +451,7 @@ export function StudentWorkDetails() {
                                                                         size="sm"
                                                                         className="mt-3 px-0 h-auto text-xs gap-1.5"
                                                                         onClick={() =>
-                                                                            downloadExplanatoryNoteFile(project.id, item.id, h.id)
+                                                                            downloadExplanatoryNoteFile(null, project.id, item.id, h.id)
                                                                                 .catch((e) => toast.error(e instanceof Error ? e.message : 'Ошибка скачивания'))
                                                                         }
                                                                     >
