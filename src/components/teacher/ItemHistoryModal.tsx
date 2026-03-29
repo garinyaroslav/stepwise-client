@@ -29,16 +29,10 @@ const statusConfig: Record<ItemStatus, {
 const useEscapeKey = (handler: () => void) => {
     useEffect(() => {
         const handleEsc = (event: globalThis.KeyboardEvent) => {
-            if (event.key === 'Escape') {
-                handler();
-            }
+            if (event.key === 'Escape') handler();
         };
-
         document.addEventListener('keydown', handleEsc);
-
-        return () => {
-            document.removeEventListener('keydown', handleEsc);
-        };
+        return () => document.removeEventListener('keydown', handleEsc);
     }, [handler]);
 };
 
@@ -46,7 +40,6 @@ export function ItemHistoryModal() {
     const location = useLocation();
     const navigate = useNavigate();
     const scrollRef = useRef<HTMLDivElement>(null);
-    const reviewRef = useRef<HTMLDivElement>(null);
 
     const { item, project, chapterTitle } = location.state as {
         item: ExplanatoryNoteItem;
@@ -59,10 +52,9 @@ export function ItemHistoryModal() {
     const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
     const canReview = item.status === ItemStatus.SUBMITTED;
 
-    const chronological = [...item.history].reverse();
+    const chronological = item.history;
 
     useEffect(() => {
-        const el = canReview ? reviewRef.current : scrollRef.current;
         if (scrollRef.current) {
             scrollRef.current.scrollTo({ left: scrollRef.current.scrollWidth, behavior: 'instant' });
         }
@@ -120,6 +112,7 @@ export function ItemHistoryModal() {
         >
             <div className="w-full max-w-[95vw] flex flex-col" style={{ maxHeight: '90vh' }}>
 
+                {/* Header */}
                 <div className="flex items-center justify-between mb-5 px-1">
                     <div className="flex items-center gap-3">
                         <button
@@ -161,21 +154,35 @@ export function ItemHistoryModal() {
                 >
                     <div className="flex items-start gap-0" style={{ minWidth: 'max-content', paddingLeft: '8px', paddingRight: '8px' }}>
 
+                        {chronological.length === 0 && (
+                            <div className="flex items-center" style={{ width: '260px' }}>
+                                <div className="w-full rounded-2xl p-4 text-center" style={{ background: 'rgba(255,255,255,0.06)', border: '0.5px solid rgba(255,255,255,0.1)' }}>
+                                    <FileText className="w-6 h-6 text-white/30 mx-auto mb-2" />
+                                    <p className="text-xs text-white/40">Файл ещё не загружен</p>
+                                </div>
+                            </div>
+                        )}
+
                         {chronological.map((entry, idx) => {
                             const prevCfg = statusConfig[entry.previousStatus];
                             const cfg = statusConfig[entry.newStatus] ?? statusConfig[ItemStatus.DRAFT];
                             const Icon = cfg.icon;
-                            const isLast = idx === chronological.length - 1 && !canReview;
+                            const isLast = idx === chronological.length - 1;
+                            const isReviewCard = isLast && canReview && entry.newStatus === ItemStatus.SUBMITTED;
 
                             return (
                                 <div key={entry.id} className="flex items-start">
-                                    <div className={cn(
-                                        'relative flex flex-col rounded-2xl border p-4 transition-all',
-                                        cfg.bgColor, cfg.borderColor,
-                                        'backdrop-blur-sm',
-                                        isLast ? 'ring-2 ring-white/20' : ''
-                                    )} style={{ width: '260px', background: 'rgba(255,255,255,0.08)', borderColor: 'rgba(255,255,255,0.12)' }}>
-
+                                    <div
+                                        className={cn(
+                                            'relative flex flex-col rounded-2xl border p-4 transition-all',
+                                            isLast ? 'ring-2 ring-white/20' : ''
+                                        )}
+                                        style={{
+                                            width: isReviewCard ? '320px' : '260px',
+                                            background: 'rgba(255,255,255,0.08)',
+                                            borderColor: 'rgba(255,255,255,0.12)',
+                                        }}
+                                    >
                                         <div className="flex items-center justify-between mb-3">
                                             <div className={cn('w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0', cfg.bgColor, cfg.borderColor, 'border')}>
                                                 <Icon className={cn('w-4 h-4', cfg.color)} />
@@ -206,7 +213,6 @@ export function ItemHistoryModal() {
                                                     <Download className="w-3.5 h-3.5 text-white/60" />
                                                 </button>
                                             </div>
-
                                         )}
 
                                         <div className="text-xs text-white/40 mb-2">
@@ -223,9 +229,74 @@ export function ItemHistoryModal() {
                                                 </div>
                                             </div>
                                         )}
+
+                                        {isReviewCard && (
+                                            <div className="mt-3 pt-3" style={{ borderTop: '0.5px solid rgba(255,255,255,0.12)' }}>
+                                                <div className="flex items-center gap-1.5 mb-2">
+                                                    <MessageSquare className="w-3.5 h-3.5 text-white/50" />
+                                                    <span className="text-xs font-medium text-white/70">Проверка</span>
+                                                </div>
+
+                                                {message && (
+                                                    <div className={cn(
+                                                        'mb-2 p-2.5 rounded-xl flex items-start gap-2 text-xs',
+                                                        message.type === 'success'
+                                                            ? 'bg-success/20 border border-success/30 text-success'
+                                                            : 'bg-destructive/20 border border-destructive/30 text-destructive'
+                                                    )}>
+                                                        {message.type === 'success'
+                                                            ? <CheckCircle className="w-3.5 h-3.5 flex-shrink-0 mt-0.5" />
+                                                            : <AlertCircle className="w-3.5 h-3.5 flex-shrink-0 mt-0.5" />
+                                                        }
+                                                        {message.text}
+                                                    </div>
+                                                )}
+
+                                                <Textarea
+                                                    value={comment}
+                                                    onChange={(e) => setComment(e.target.value)}
+                                                    placeholder="Комментарий для студента..."
+                                                    rows={3}
+                                                    maxLength={400}
+                                                    className="resize-none text-xs mb-1 w-full"
+                                                    style={{ background: 'rgba(255,255,255,0.06)', border: '0.5px solid rgba(255,255,255,0.15)', color: 'white' }}
+                                                />
+                                                <div className="flex justify-end mb-2">
+                                                    <span className="text-xs" style={{ color: 'rgba(255,255,255,0.35)' }}>{comment.length}/400</span>
+                                                </div>
+
+                                                <div className="flex gap-2">
+                                                    <Button
+                                                        size="sm"
+                                                        onClick={handleApprove}
+                                                        disabled={isSubmitting}
+                                                        className="flex-1 bg-success text-success-foreground hover:bg-success/90 h-8 text-xs"
+                                                    >
+                                                        {isSubmitting
+                                                            ? <div className="w-3 h-3 border border-success-foreground border-t-transparent rounded-full animate-spin" />
+                                                            : <CheckCircle className="w-3.5 h-3.5" />
+                                                        }
+                                                        Одобрить
+                                                    </Button>
+                                                    <Button
+                                                        size="sm"
+                                                        onClick={handleReject}
+                                                        disabled={isSubmitting}
+                                                        variant="destructive"
+                                                        className="flex-1 h-8 text-xs"
+                                                    >
+                                                        {isSubmitting
+                                                            ? <div className="w-3 h-3 border border-destructive-foreground border-t-transparent rounded-full animate-spin" />
+                                                            : <XCircle className="w-3.5 h-3.5" />
+                                                        }
+                                                        Отклонить
+                                                    </Button>
+                                                </div>
+                                            </div>
+                                        )}
                                     </div>
 
-                                    {(idx < chronological.length - 1 || canReview) && (
+                                    {idx < chronological.length - 1 && (
                                         <div className="flex items-center" style={{ width: '32px', marginTop: '20px' }}>
                                             <div className="h-px w-full" style={{ background: 'rgba(255,255,255,0.15)' }} />
                                             <div className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background: 'rgba(255,255,255,0.25)' }} />
@@ -234,98 +305,6 @@ export function ItemHistoryModal() {
                                 </div>
                             );
                         })}
-
-                        {chronological.length === 0 && (
-                            <div className="flex items-center" style={{ width: '260px' }}>
-                                <div className="w-full rounded-2xl p-4 text-center" style={{ background: 'rgba(255,255,255,0.06)', border: '0.5px solid rgba(255,255,255,0.1)' }}>
-                                    <FileText className="w-6 h-6 text-white/30 mx-auto mb-2" />
-                                    <p className="text-xs text-white/40">Файл ещё не загружен</p>
-                                </div>
-                            </div>
-                        )}
-
-                        {canReview && (
-                            <>
-                                <div className="flex items-center" style={{ width: '32px', marginTop: '20px' }}>
-                                    <div className="h-px w-full" style={{ background: 'rgba(255,255,255,0.15)' }} />
-                                    <div className="w-1.5 h-1.5 rounded-full flex-shrink-0" style={{ background: 'rgba(255,255,255,0.25)' }} />
-                                </div>
-
-                                <div
-                                    ref={reviewRef}
-                                    className="flex flex-col rounded-2xl p-4"
-                                    style={{
-                                        width: '300px',
-                                        background: 'rgba(255,255,255,0.10)',
-                                        border: '1px solid rgba(255,255,255,0.2)',
-                                        boxShadow: '0 0 0 1px rgba(255,255,255,0.05)',
-                                    }}
-                                >
-                                    <div className="flex items-center gap-2 mb-3">
-                                        <div className="w-8 h-8 rounded-full bg-white/10 flex items-center justify-center">
-                                            <MessageSquare className="w-4 h-4 text-white/70" />
-                                        </div>
-                                        <span className="text-sm font-medium text-white">Проверка</span>
-                                    </div>
-
-                                    {message && (
-                                        <div className={cn(
-                                            'mb-3 p-2.5 rounded-xl flex items-start gap-2 text-xs',
-                                            message.type === 'success'
-                                                ? 'bg-success/20 border border-success/30 text-success'
-                                                : 'bg-destructive/20 border border-destructive/30 text-destructive'
-                                        )}>
-                                            {message.type === 'success'
-                                                ? <CheckCircle className="w-3.5 h-3.5 flex-shrink-0 mt-0.5" />
-                                                : <AlertCircle className="w-3.5 h-3.5 flex-shrink-0 mt-0.5" />
-                                            }
-                                            {message.text}
-                                        </div>
-                                    )}
-
-                                    <Textarea
-                                        value={comment}
-                                        onChange={(e) => setComment(e.target.value)}
-                                        placeholder="Комментарий для студента..."
-                                        rows={3}
-                                        maxLength={400}
-                                        className="resize-none text-xs mb-1"
-                                        style={{ background: 'rgba(255,255,255,0.06)', border: '0.5px solid rgba(255,255,255,0.15)', color: 'white' }}
-                                    />
-                                    <div className="flex justify-end mb-3">
-                                        <span className="text-xs" style={{ color: 'rgba(255,255,255,0.35)' }}>{comment.length}/400</span>
-                                    </div>
-
-                                    <div className="flex gap-2">
-                                        <Button
-                                            size="sm"
-                                            onClick={handleApprove}
-                                            disabled={isSubmitting}
-                                            className="flex-1 bg-success text-success-foreground hover:bg-success/90 h-8 text-xs"
-                                        >
-                                            {isSubmitting
-                                                ? <div className="w-3 h-3 border border-success-foreground border-t-transparent rounded-full animate-spin" />
-                                                : <CheckCircle className="w-3.5 h-3.5" />
-                                            }
-                                            Одобрить
-                                        </Button>
-                                        <Button
-                                            size="sm"
-                                            onClick={handleReject}
-                                            disabled={isSubmitting}
-                                            variant="destructive"
-                                            className="flex-1 h-8 text-xs"
-                                        >
-                                            {isSubmitting
-                                                ? <div className="w-3 h-3 border border-destructive-foreground border-t-transparent rounded-full animate-spin" />
-                                                : <XCircle className="w-3.5 h-3.5" />
-                                            }
-                                            Отклонить
-                                        </Button>
-                                    </div>
-                                </div>
-                            </>
-                        )}
 
                     </div>
                 </div>
