@@ -1,0 +1,5 @@
+export enum ProjectStatus {
+    IN_PROGRESS = "IN_PROGRESS",
+    APPROVED_FOR_DEFENSE = "APPROVED_FOR_DEFENSE",
+    DEFENDED = "DEFENDED"
+}

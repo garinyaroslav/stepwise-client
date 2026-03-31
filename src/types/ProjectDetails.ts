@@ -1,4 +1,5 @@
 import { ExplanatoryNoteItem } from "./ExplanatoryNoteItem";
+import { ProjectStatus } from "./ProjectStatus";
 import { UserWithProfile } from "./UserWithProfile";
 
 export interface ProjectDetails {
@@ -7,5 +8,7 @@ export interface ProjectDetails {
     description: string;
     owner: UserWithProfile;
     items: ExplanatoryNoteItem[];
-    approvedForDefense: boolean;
+    status: ProjectStatus;
+    approvedForDefenseAt: Date;
+    defendedAt: Date;
 }

@@ -12,6 +12,8 @@ import { ExplanatoryNoteItem } from '@/types/ExplanatoryNoteItem';
 import { ProjectDetails } from '@/types/ProjectDetails';
 import { getAcademicWorkById, getProjectsByWorkForTeacher, approveProjectForDefense } from '@/api/endpoints';
 import { useNavigate, useParams, useLocation } from 'react-router';
+import { DefenseCalendar } from '@/components/teacher/DefenseCalendar';
+import { ProjectStatus } from '@/types/ProjectStatus';
 
 const statusConfig: Record<ItemStatus, {
     label: string; color: string; bgColor: string;
@@ -91,7 +93,7 @@ export function StudentWorksTablePage() {
     const isLoading = isLoadingWork || isLoadingProjects;
 
     const totalStudents = projects.length;
-    const approvedDefense = projects.filter((p) => p.approvedForDefense).length;
+    const approvedDefense = projects.filter((p) => p.status === ProjectStatus.APPROVED_FOR_DEFENSE).length;
     const pendingReview = projects.reduce((acc, p) => acc + p.items.filter((i) => i.status === 'SUBMITTED').length, 0);
     const totalApproved = projects.reduce((acc, p) => acc + p.items.filter((i) => i.status === 'APPROVED').length, 0);
     const totalItems = projects.reduce((acc, p) => acc + p.items.length, 0);
@@ -269,7 +271,7 @@ export function StudentWorksTablePage() {
 
                                             <td className="px-6 py-4 sticky right-0 z-30 border-l border-border bg-card">
                                                 <div className="flex justify-center">
-                                                    {project.approvedForDefense ? (
+                                                    {project.status === ProjectStatus.APPROVED_FOR_DEFENSE ? (
                                                         <div className="inline-flex items-center gap-2 px-6 py-2.5 bg-success/10 border border-success/30 rounded-2xl">
                                                             <CheckCircle className="w-4 h-4 text-success" />
                                                             <span className="text-sm font-medium text-success">Допущен</span>
@@ -305,6 +307,13 @@ export function StudentWorksTablePage() {
                         </div>
                     ))}
                 </div>
+            )}
+
+            {workId && work && (
+                <DefenseCalendar
+                    academicWorkId={Number(workId)}
+                    workTitle={work.title}
+                />
             )}
         </div>
     );

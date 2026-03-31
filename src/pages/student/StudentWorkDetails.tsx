@@ -33,6 +33,8 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
+import { StudentDefenseRegistration } from './StudentDefenceRegistration';
+import { ProjectStatus } from '@/types/ProjectStatus';
 
 const statusConfig: Record<
     ItemStatus,
@@ -227,8 +229,8 @@ export function StudentWorkDetails() {
                     )}
 
                     {!isEditing && allItemsApproved && (
-                        <div className={`mt-5 p-4 rounded-lg border ${project.approvedForDefense ? 'bg-success/10 border-success' : 'bg-chart-4/10 border-chart-4'}`}>
-                            {project.approvedForDefense ? (
+                        <div className={`mt-5 p-4 rounded-lg border ${project.status === ProjectStatus.APPROVED_FOR_DEFENSE ? 'bg-success/10 border-success' : 'bg-chart-4/10 border-chart-4'}`}>
+                            {project.status === ProjectStatus.APPROVED_FOR_DEFENSE ? (
                                 <div className="flex items-start gap-3">
                                     <CheckCircle className="w-5 h-5 text-success flex-shrink-0 mt-0.5" />
                                     <div>
@@ -473,6 +475,15 @@ export function StudentWorkDetails() {
                     );
                 })}
             </div>
+
+            {id &&
+                <StudentDefenseRegistration
+                    projectId={project.id}
+                    projectStatus={project.status}
+                    academicWorkId={Number(id)}
+                />
+            }
+
         </div>
     );
 }
