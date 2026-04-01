@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
     ChevronLeft,
     ChevronRight,
@@ -12,23 +12,13 @@ import {
     Trash2,
     Info,
 } from 'lucide-react';
-
-type Registration = {
-    id: number;
-    studentName: string;
-    registeredAt: string;
-    orderNumber?: number;
-};
-
-type DefenseSchedule = {
-    id: number;
-    academicWorkId: number;
-    startTime: string;
-    endTime?: string;
-    maxStudents?: number;
-    comment?: string;
-    registrations: Registration[];
-};
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Textarea } from '@/components/ui/textarea';
+import { Label } from '@/components/ui/label';
+import { getDefenseSchedulesByWork, createDefenseSchedule } from '@/api/endpoints';
+import { toast } from 'sonner';
+import { DefenseSchedule } from '@/types/Defence';
 
 type CreateForm = {
     startTime: string;
@@ -52,48 +42,13 @@ const MONTHS_GEN_RU = [
     'июля', 'августа', 'сентября', 'октября', 'ноября', 'декабря',
 ];
 
-const mockSchedules: DefenseSchedule[] = [
-    {
-        id: 1,
-        academicWorkId: 1,
-        startTime: '2026-04-10T09:00:00',
-        endTime: '2026-04-10T13:00:00',
-        maxStudents: 3,
-        comment: 'Кабинет 305, 3 этаж',
-        registrations: [
-            { id: 1, studentName: 'Иванов Иван', registeredAt: '2026-03-25T10:00:00', orderNumber: 1 },
-            { id: 2, studentName: 'Сидоров Сергей', registeredAt: '2026-03-25T11:00:00', orderNumber: 2 },
-            { id: 3, studentName: 'Петров Петр', registeredAt: '2026-03-26T09:00:00', orderNumber: 3 },
-        ],
-    },
-    {
-        id: 2,
-        academicWorkId: 1,
-        startTime: '2026-04-15T14:00:00',
-        endTime: '2026-04-15T18:00:00',
-        maxStudents: 5,
-        comment: 'Аудитория 201',
-        registrations: [
-            { id: 4, studentName: 'Козлов Алексей', registeredAt: '2026-03-26T10:00:00', orderNumber: 1 },
-            { id: 5, studentName: 'Петров Иван', registeredAt: '2026-03-27T09:00:00', orderNumber: 2 },
-        ],
-    },
-    {
-        id: 3,
-        academicWorkId: 1,
-        startTime: '2026-04-22T10:00:00',
-        maxStudents: 5,
-        registrations: [],
-    },
-];
-
 function getDaysInMonth(year: number, month: number) {
     return new Date(year, month + 1, 0).getDate();
 }
 
 function getFirstDayOfWeek(year: number, month: number) {
     const day = new Date(year, month, 1).getDay();
-    return (day + 6) % 7; // 0=Mon, 6=Sun
+    return (day + 6) % 7;
 }
 
 function formatTime(isoStr: string) {
@@ -102,21 +57,27 @@ function formatTime(isoStr: string) {
 
 export function DefenseCalendar({ academicWorkId, workTitle }: Props) {
     const today = new Date();
-
     const defaultMonth = today.getMonth() === 11 ? 0 : today.getMonth() + 1;
     const defaultYear = today.getMonth() === 11 ? today.getFullYear() + 1 : today.getFullYear();
 
     const [currentYear, setCurrentYear] = useState(defaultYear);
     const [currentMonth, setCurrentMonth] = useState(defaultMonth);
-    const [schedules, setSchedules] = useState<DefenseSchedule[]>(
-        mockSchedules.filter((s) => s.academicWorkId === academicWorkId)
-    );
+    const [schedules, setSchedules] = useState<DefenseSchedule[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
     const [selectedDay, setSelectedDay] = useState<number | null>(null);
     const [selectedSchedule, setSelectedSchedule] = useState<DefenseSchedule | null>(null);
     const [showModal, setShowModal] = useState(false);
     const [form, setForm] = useState<CreateForm>({ startTime: '', endTime: '', maxStudents: '', comment: '' });
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [formError, setFormError] = useState('');
+
+    useEffect(() => {
+        setIsLoading(true);
+        getDefenseSchedulesByWork(academicWorkId)
+            .then(setSchedules)
+            .catch(() => toast.error('Не удалось загрузить расписание защит'))
+            .finally(() => setIsLoading(false));
+    }, [academicWorkId]);
 
     const prevMonth = () => {
         if (currentMonth === 0) { setCurrentMonth(11); setCurrentYear((y) => y - 1); }
@@ -136,7 +97,7 @@ export function DefenseCalendar({ academicWorkId, workTitle }: Props) {
     const isToday = (day: number) =>
         day === today.getDate() && currentMonth === today.getMonth() && currentYear === today.getFullYear();
 
-    const isPast = (day: number) => {
+    const isPastDay = (day: number) => {
         const d = new Date(currentYear, currentMonth, day);
         const t = new Date(today.getFullYear(), today.getMonth(), today.getDate());
         return d < t;
@@ -148,12 +109,11 @@ export function DefenseCalendar({ academicWorkId, workTitle }: Props) {
     for (let i = 0; i < firstDay; i++) calendarDays.push(null);
     for (let d = 1; d <= daysInMonth; d++) calendarDays.push(d);
     while (calendarDays.length % 7 !== 0) calendarDays.push(null);
-
     const rows: (number | null)[][] = [];
     for (let i = 0; i < calendarDays.length; i += 7) rows.push(calendarDays.slice(i, i + 7));
 
     const openCreateModal = (day: number) => {
-        if (isPast(day)) return;
+        if (isPastDay(day)) return;
         setSelectedDay(day);
         setSelectedSchedule(null);
         setForm({ startTime: '', endTime: '', maxStudents: '', comment: '' });
@@ -190,25 +150,27 @@ export function DefenseCalendar({ academicWorkId, workTitle }: Props) {
         const startTime = `${dateStr}T${form.startTime}:00`;
         const endTime = form.endTime ? `${dateStr}T${form.endTime}:00` : undefined;
 
-        await new Promise((r) => setTimeout(r, 600));
-
-        const newSchedule: DefenseSchedule = {
-            id: Date.now(),
-            academicWorkId,
-            startTime,
-            endTime,
-            maxStudents: form.maxStudents ? parseInt(form.maxStudents) : undefined,
-            comment: form.comment.trim() || undefined,
-            registrations: [],
-        };
-
-        setSchedules((prev) => [...prev, newSchedule]);
-        setIsSubmitting(false);
-        closeModal();
+        try {
+            const created = await createDefenseSchedule({
+                academicWorkId,
+                startTime,
+                endTime,
+                maxStudents: form.maxStudents ? parseInt(form.maxStudents) : undefined,
+                comment: form.comment.trim() || undefined,
+            });
+            setSchedules((prev) => [...prev, created]);
+            toast.success('Слот защиты создан');
+            closeModal();
+        } catch {
+            toast.error('Не удалось создать слот защиты');
+        } finally {
+            setIsSubmitting(false);
+        }
     };
 
     const handleDelete = (scheduleId: number) => {
         setSchedules((prev) => prev.filter((s) => s.id !== scheduleId));
+        toast.success('Слот удалён');
         closeModal();
     };
 
@@ -220,10 +182,7 @@ export function DefenseCalendar({ academicWorkId, workTitle }: Props) {
         return d.getFullYear() === currentYear && d.getMonth() === currentMonth;
     });
     const totalSlots = monthSchedules.length;
-    const totalRegistrations = monthSchedules.reduce((acc, s) => acc + s.registrations.length, 0);
-    const fullSlots = monthSchedules.filter(
-        (s) => s.maxStudents !== undefined && s.registrations.length >= s.maxStudents
-    ).length;
+    const totalRegistrations = monthSchedules.reduce((acc, s) => acc + s.registeredCount, 0);
 
     return (
         <div className="bg-card border border-border rounded-xl overflow-hidden">
@@ -240,31 +199,25 @@ export function DefenseCalendar({ academicWorkId, workTitle }: Props) {
                     </div>
 
                     <div className="flex items-center gap-1">
-                        <button
-                            onClick={prevMonth}
-                            className="p-2 hover:bg-accent rounded-lg transition-colors"
-                        >
-                            <ChevronLeft className="w-5 h-5 text-muted-foreground" />
-                        </button>
+                        <Button variant="ghost" size="icon" onClick={prevMonth} className="h-9 w-9">
+                            <ChevronLeft className="w-5 h-5" />
+                        </Button>
                         <span className="text-card-foreground font-semibold min-w-[180px] text-center">
                             {MONTHS_RU[currentMonth]} {currentYear}
                         </span>
-                        <button
-                            onClick={nextMonth}
-                            className="p-2 hover:bg-accent rounded-lg transition-colors"
-                        >
-                            <ChevronRight className="w-5 h-5 text-muted-foreground" />
-                        </button>
+                        <Button variant="ghost" size="icon" onClick={nextMonth} className="h-9 w-9">
+                            <ChevronRight className="w-5 h-5" />
+                        </Button>
                     </div>
 
                     <div className="flex items-center gap-5 text-xs">
                         <div className="flex items-center gap-1.5 text-muted-foreground">
                             <Calendar className="w-3.5 h-3.5" />
-                            <span>{totalSlots} слотов</span>
+                            <span>{isLoading ? '...' : `${totalSlots} слотов`}</span>
                         </div>
                         <div className="flex items-center gap-1.5 text-muted-foreground">
                             <Users className="w-3.5 h-3.5" />
-                            <span>{totalRegistrations} записано</span>
+                            <span>{isLoading ? '...' : `${totalRegistrations} записано`}</span>
                         </div>
                         <div className="flex items-center gap-1.5">
                             <div className="w-2 h-2 rounded-full bg-success" />
@@ -280,105 +233,89 @@ export function DefenseCalendar({ academicWorkId, workTitle }: Props) {
 
             <div className="grid grid-cols-7 border-b border-border bg-muted/40">
                 {DAYS_RU.map((day, i) => (
-                    <div
-                        key={day}
-                        className={`py-2.5 text-center text-xs font-semibold tracking-wide ${i >= 5 ? 'text-destructive/60' : 'text-muted-foreground'
-                            }`}
-                    >
+                    <div key={day} className={`py-2.5 text-center text-xs font-semibold tracking-wide ${i >= 5 ? 'text-destructive/60' : 'text-muted-foreground'}`}>
                         {day}
                     </div>
                 ))}
             </div>
 
-            <div>
-                {rows.map((row, rowIdx) => (
-                    <div key={rowIdx} className="grid grid-cols-7 border-b border-border last:border-b-0">
-                        {row.map((day, colIdx) => {
-                            if (day === null) {
+            {isLoading ? (
+                <div className="p-12 text-center">
+                    <div className="w-8 h-8 border-2 border-primary border-t-transparent rounded-full animate-spin mx-auto mb-3" />
+                    <p className="text-muted-foreground text-sm">Загрузка расписания...</p>
+                </div>
+            ) : (
+                <div>
+                    {rows.map((row, rowIdx) => (
+                        <div key={rowIdx} className="grid grid-cols-7 border-b border-border last:border-b-0">
+                            {row.map((day, colIdx) => {
+                                if (day === null) {
+                                    return <div key={colIdx} className="min-h-[120px] border-r border-border last:border-r-0 bg-muted/10" />;
+                                }
+                                const daySchedules = getSchedulesForDay(day);
+                                const isWeekend = colIdx >= 5;
+                                const todayFlag = isToday(day);
+                                const pastFlag = isPastDay(day);
+
                                 return (
                                     <div
                                         key={colIdx}
-                                        className="min-h-[120px] border-r border-border last:border-r-0 bg-muted/10"
-                                    />
-                                );
-                            }
-
-                            const daySchedules = getSchedulesForDay(day);
-                            const isWeekend = colIdx >= 5;
-                            const todayFlag = isToday(day);
-                            const pastFlag = isPast(day);
-
-                            return (
-                                <div
-                                    key={colIdx}
-                                    onClick={() => openCreateModal(day)}
-                                    className={`
-                    min-h-[120px] border-r border-border last:border-r-0 p-2 relative
-                    transition-colors group
-                    ${isWeekend ? 'bg-muted/10' : ''}
-                    ${todayFlag ? 'bg-primary/5' : ''}
-                    ${pastFlag ? 'opacity-60' : !todayFlag ? 'hover:bg-accent/40 cursor-pointer' : 'hover:bg-primary/10 cursor-pointer'}
-                  `}
-                                >
-                                    <div
-                                        className={`w-7 h-7 rounded-full flex items-center justify-center mb-1.5 text-sm ${todayFlag
-                                            ? 'bg-primary text-primary-foreground font-semibold'
-                                            : isWeekend
-                                                ? 'text-destructive/70'
-                                                : 'text-card-foreground'
-                                            }`}
+                                        onClick={() => openCreateModal(day)}
+                                        className={`min-h-[120px] border-r border-border last:border-r-0 p-2 relative transition-colors group
+                                            ${isWeekend ? 'bg-muted/10' : ''}
+                                            ${todayFlag ? 'bg-primary/5' : ''}
+                                            ${pastFlag ? 'opacity-60' : !todayFlag ? 'hover:bg-accent/40 cursor-pointer' : 'hover:bg-primary/10 cursor-pointer'}
+                                        `}
                                     >
-                                        {day}
-                                    </div>
+                                        <div className={`w-7 h-7 rounded-full flex items-center justify-center mb-1.5 text-sm
+                                            ${todayFlag ? 'bg-primary text-primary-foreground font-semibold' : isWeekend ? 'text-destructive/70' : 'text-card-foreground'}`}>
+                                            {day}
+                                        </div>
 
-                                    <div className="space-y-1">
-                                        {daySchedules.slice(0, 3).map((schedule) => {
-                                            const isFull =
-                                                schedule.maxStudents !== undefined &&
-                                                schedule.registrations.length >= schedule.maxStudents;
-                                            return (
-                                                <button
-                                                    key={schedule.id}
-                                                    onClick={(e) => openViewModal(e, schedule)}
-                                                    className={`
-                            w-full px-1.5 py-1 rounded text-xs flex items-center gap-1
-                            border transition-colors
-                            ${isFull
-                                                            ? 'bg-destructive/10 text-destructive border-destructive/20 hover:bg-destructive/20'
-                                                            : 'bg-success/10 text-success border-success/20 hover:bg-success/20'
-                                                        }
-                          `}
-                                                >
-                                                    <Clock className="w-3 h-3 flex-shrink-0" />
-                                                    <span className="truncate">{formatTime(schedule.startTime)}</span>
-                                                    {schedule.maxStudents !== undefined && (
-                                                        <span className="ml-auto flex-shrink-0 opacity-70 text-[10px]">
-                                                            {schedule.registrations.length}/{schedule.maxStudents}
-                                                        </span>
-                                                    )}
-                                                </button>
-                                            );
-                                        })}
-                                        {daySchedules.length > 3 && (
-                                            <div className="text-[10px] text-muted-foreground px-1">
-                                                +{daySchedules.length - 3} ещё
+                                        <div className="space-y-1">
+                                            {daySchedules.slice(0, 3).map((schedule) => {
+                                                const isFull = schedule.full;
+                                                return (
+                                                    <button
+                                                        key={schedule.id}
+                                                        onClick={(e) => openViewModal(e, schedule)}
+                                                        className={`w-full px-1.5 py-1 rounded text-xs flex items-center gap-1 border transition-colors
+                                                            ${isFull
+                                                                ? 'bg-destructive/10 text-destructive border-destructive/20 hover:bg-destructive/20'
+                                                                : 'bg-success/10 text-success border-success/20 hover:bg-success/20'
+                                                            }`}
+                                                    >
+                                                        <Clock className="w-3 h-3 flex-shrink-0" />
+                                                        <span className="truncate">{formatTime(schedule.startTime)}</span>
+                                                        {schedule.maxStudents !== undefined && (
+                                                            <span className="ml-auto flex-shrink-0 opacity-70 text-[10px]">
+                                                                {schedule.registeredCount}/{schedule.maxStudents}
+                                                            </span>
+                                                        )}
+                                                    </button>
+                                                );
+                                            })}
+                                            {daySchedules.length > 3 && (
+                                                <div className="text-[10px] text-muted-foreground px-1">
+                                                    +{daySchedules.length - 3} ещё
+                                                </div>
+                                            )}
+                                        </div>
+
+                                        {!pastFlag && (
+                                            <div className="absolute bottom-1.5 right-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
+                                                <div className="w-5 h-5 rounded-full bg-primary/10 flex items-center justify-center">
+                                                    <Plus className="w-3 h-3 text-primary" />
+                                                </div>
                                             </div>
                                         )}
                                     </div>
-
-                                    {!pastFlag && (
-                                        <div className="absolute bottom-1.5 right-1.5 opacity-0 group-hover:opacity-100 transition-opacity">
-                                            <div className="w-5 h-5 rounded-full bg-primary/10 flex items-center justify-center">
-                                                <Plus className="w-3 h-3 text-primary" />
-                                            </div>
-                                        </div>
-                                    )}
-                                </div>
-                            );
-                        })}
-                    </div>
-                ))}
-            </div>
+                                );
+                            })}
+                        </div>
+                    ))}
+                </div>
+            )}
 
             <div className="px-5 py-3 border-t border-border bg-muted/30 flex items-center gap-2">
                 <Info className="w-3.5 h-3.5 text-muted-foreground flex-shrink-0" />
@@ -389,10 +326,7 @@ export function DefenseCalendar({ academicWorkId, workTitle }: Props) {
 
             {showModal && (
                 <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-                    <div
-                        className="absolute inset-0 bg-black/40 backdrop-blur-sm"
-                        onClick={closeModal}
-                    />
+                    <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={closeModal} />
                     <div className="relative bg-card border border-border rounded-2xl w-full max-w-md shadow-2xl overflow-hidden">
                         <div className="p-5 border-b border-border flex items-start justify-between">
                             <div>
@@ -401,18 +335,13 @@ export function DefenseCalendar({ academicWorkId, workTitle }: Props) {
                                 </h3>
                                 <p className="text-sm text-muted-foreground mt-0.5">
                                     {selectedSchedule
-                                        ? new Date(selectedSchedule.startTime).toLocaleDateString('ru-RU', {
-                                            day: 'numeric', month: 'long', year: 'numeric',
-                                        })
+                                        ? new Date(selectedSchedule.startTime).toLocaleDateString('ru-RU', { day: 'numeric', month: 'long', year: 'numeric' })
                                         : selectedDay ? formatSelectedDate(selectedDay) : ''}
                                 </p>
                             </div>
-                            <button
-                                onClick={closeModal}
-                                className="p-2 hover:bg-accent rounded-xl transition-colors"
-                            >
-                                <X className="w-5 h-5 text-muted-foreground" />
-                            </button>
+                            <Button variant="ghost" size="icon" onClick={closeModal} className="h-9 w-9">
+                                <X className="w-5 h-5" />
+                            </Button>
                         </div>
 
                         <div className="p-5 max-h-[70vh] overflow-y-auto">
@@ -441,20 +370,12 @@ export function DefenseCalendar({ academicWorkId, workTitle }: Props) {
                                                 <div className="flex items-center gap-2">
                                                     <div className="flex-1 h-1.5 bg-muted rounded-full overflow-hidden">
                                                         <div
-                                                            className={`h-full rounded-full ${selectedSchedule.registrations.length >= selectedSchedule.maxStudents
-                                                                ? 'bg-destructive'
-                                                                : 'bg-success'
-                                                                }`}
-                                                            style={{
-                                                                width: `${Math.min(
-                                                                    (selectedSchedule.registrations.length / selectedSchedule.maxStudents) * 100,
-                                                                    100
-                                                                )}%`,
-                                                            }}
+                                                            className={`h-full rounded-full ${selectedSchedule.full ? 'bg-destructive' : 'bg-success'}`}
+                                                            style={{ width: `${Math.min((selectedSchedule.registeredCount / selectedSchedule.maxStudents) * 100, 100)}%` }}
                                                         />
                                                     </div>
                                                     <span className="text-sm font-medium text-card-foreground flex-shrink-0">
-                                                        {selectedSchedule.registrations.length} / {selectedSchedule.maxStudents}
+                                                        {selectedSchedule.registeredCount} / {selectedSchedule.maxStudents}
                                                     </span>
                                                 </div>
                                             </div>
@@ -473,50 +394,20 @@ export function DefenseCalendar({ academicWorkId, workTitle }: Props) {
                                         </div>
                                     )}
 
-                                    {selectedSchedule.registrations.length > 0 && (
-                                        <div>
-                                            <p className="text-sm font-medium text-card-foreground mb-2">
-                                                Записавшиеся студенты:
-                                            </p>
-                                            <div className="space-y-2">
-                                                {selectedSchedule.registrations.map((reg) => (
-                                                    <div
-                                                        key={reg.id}
-                                                        className="flex items-center gap-2.5 p-2.5 bg-muted/50 rounded-lg border border-border"
-                                                    >
-                                                        <div className="w-7 h-7 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
-                                                            <span className="text-xs font-semibold text-primary">
-                                                                {reg.studentName[0]}
-                                                            </span>
-                                                        </div>
-                                                        <span className="text-sm text-card-foreground">{reg.studentName}</span>
-                                                        {reg.orderNumber && (
-                                                            <span className="ml-auto text-xs text-muted-foreground">
-                                                                #{reg.orderNumber}
-                                                            </span>
-                                                        )}
-                                                        <span className="text-xs text-muted-foreground">
-                                                            {new Date(reg.registeredAt).toLocaleDateString('ru-RU')}
-                                                        </span>
-                                                    </div>
-                                                ))}
-                                            </div>
-                                        </div>
-                                    )}
+                                    <div className="text-center py-3 text-sm text-muted-foreground">
+                                        {selectedSchedule.registeredCount > 0
+                                            ? `Записано студентов: ${selectedSchedule.registeredCount}`
+                                            : 'Никто ещё не записался'}
+                                    </div>
 
-                                    {selectedSchedule.registrations.length === 0 && (
-                                        <div className="text-center py-4 text-muted-foreground text-sm">
-                                            Никто ещё не записался
-                                        </div>
-                                    )}
-
-                                    <button
+                                    <Button
+                                        variant="outline"
+                                        className="w-full border-destructive/30 text-destructive hover:bg-destructive/5 hover:text-destructive"
                                         onClick={() => handleDelete(selectedSchedule.id)}
-                                        className="w-full flex items-center justify-center gap-2 px-4 py-2.5 border border-destructive/30 text-destructive rounded-xl hover:bg-destructive/5 transition-colors text-sm font-medium mt-2"
                                     >
-                                        <Trash2 className="w-4 h-4" />
+                                        <Trash2 className="w-4 h-4 mr-2" />
                                         Удалить слот
-                                    </button>
+                                    </Button>
                                 </div>
                             ) : (
                                 <div className="space-y-4">
@@ -526,86 +417,122 @@ export function DefenseCalendar({ academicWorkId, workTitle }: Props) {
                                         </div>
                                     )}
 
-                                    <div>
-                                        <label className="block text-sm font-medium text-card-foreground mb-1.5">
+                                    <div className="space-y-1.5">
+                                        <Label>
                                             Время начала <span className="text-destructive">*</span>
-                                        </label>
-                                        <input
-                                            type="time"
-                                            value={form.startTime}
-                                            onChange={(e) => setForm((f) => ({ ...f, startTime: e.target.value }))}
-                                            className="w-full px-3 py-2.5 border border-input bg-background rounded-xl focus:outline-none focus:ring-2 focus:ring-ring text-card-foreground"
-                                        />
+                                        </Label>
+                                        <div className="border border-input rounded-md p-3 flex items-center gap-2 bg-transparent">
+                                            <Clock className="w-4 h-4 text-muted-foreground" />
+                                            <span className="text-sm text-muted-foreground">Время:</span>
+                                            <div className="flex items-center gap-1">
+                                                <select
+                                                    className="h-9 rounded-md border border-input bg-transparent px-2 text-sm shadow-xs outline-none focus-visible:ring-2 focus-visible:ring-primary transition-[color,box-shadow] cursor-pointer"
+                                                    value={form.startTime.split(':')[0] || '00'}
+                                                    onChange={(e) => setForm((f) => ({ ...f, startTime: `${e.target.value}:${f.startTime.split(':')[1] || '00'}` }))}
+                                                >
+                                                    {Array.from({ length: 24 }, (_, i) => (
+                                                        <option key={i} value={String(i).padStart(2, '0')}>
+                                                            {String(i).padStart(2, '0')}
+                                                        </option>
+                                                    ))}
+                                                </select>
+                                                <span className="text-muted-foreground text-sm font-medium">:</span>
+                                                <select
+                                                    className="h-9 rounded-md border border-input bg-transparent px-2 text-sm shadow-xs outline-none focus-visible:ring-2 focus-visible:ring-primary transition-[color,box-shadow] cursor-pointer"
+                                                    value={form.startTime.split(':')[1] || '00'}
+                                                    onChange={(e) => setForm((f) => ({ ...f, startTime: `${f.startTime.split(':')[0] || '00'}:${e.target.value}` }))}
+                                                >
+                                                    {Array.from({ length: 12 }, (_, i) => (
+                                                        <option key={i} value={String(i * 5).padStart(2, '0')}>
+                                                            {String(i * 5).padStart(2, '0')}
+                                                        </option>
+                                                    ))}
+                                                </select>
+                                            </div>
+                                        </div>
                                     </div>
 
-                                    <div>
-                                        <label className="block text-sm font-medium text-card-foreground mb-1.5">
+                                    <div className="space-y-1.5">
+                                        <Label>
                                             Время окончания
                                             <span className="text-muted-foreground font-normal ml-1.5 text-xs">(необязательно)</span>
-                                        </label>
-                                        <input
-                                            type="time"
-                                            value={form.endTime}
-                                            onChange={(e) => setForm((f) => ({ ...f, endTime: e.target.value }))}
-                                            className="w-full px-3 py-2.5 border border-input bg-background rounded-xl focus:outline-none focus:ring-2 focus:ring-ring text-card-foreground"
-                                        />
+                                        </Label>
+                                        <div className="border border-input rounded-md p-3 flex items-center gap-2 bg-transparent">
+                                            <Clock className="w-4 h-4 text-muted-foreground" />
+                                            <span className="text-sm text-muted-foreground">Время:</span>
+                                            <div className="flex items-center gap-1">
+                                                <select
+                                                    className="h-9 rounded-md border border-input bg-transparent px-2 text-sm shadow-xs outline-none focus-visible:ring-2 focus-visible:ring-primary transition-[color,box-shadow] cursor-pointer"
+                                                    value={form.endTime.split(':')[0] || '00'}
+                                                    onChange={(e) => setForm((f) => ({ ...f, endTime: `${e.target.value}:${f.endTime.split(':')[1] || '00'}` }))}
+                                                >
+                                                    {Array.from({ length: 24 }, (_, i) => (
+                                                        <option key={i} value={String(i).padStart(2, '0')}>
+                                                            {String(i).padStart(2, '0')}
+                                                        </option>
+                                                    ))}
+                                                </select>
+                                                <span className="text-muted-foreground text-sm font-medium">:</span>
+                                                <select
+                                                    className="h-9 rounded-md border border-input bg-transparent px-2 text-sm shadow-xs outline-none focus-visible:ring-2 focus-visible:ring-primary transition-[color,box-shadow] cursor-pointer"
+                                                    value={form.endTime.split(':')[1] || '00'}
+                                                    onChange={(e) => setForm((f) => ({ ...f, endTime: `${f.endTime.split(':')[0] || '00'}:${e.target.value}` }))}
+                                                >
+                                                    {Array.from({ length: 12 }, (_, i) => (
+                                                        <option key={i} value={String(i * 5).padStart(2, '0')}>
+                                                            {String(i * 5).padStart(2, '0')}
+                                                        </option>
+                                                    ))}
+                                                </select>
+                                            </div>
+                                        </div>
                                     </div>
 
-                                    <div>
-                                        <label className="block text-sm font-medium text-card-foreground mb-1.5">
+                                    <div className="space-y-1.5">
+                                        <Label>
                                             Максимум студентов
                                             <span className="text-muted-foreground font-normal ml-1.5 text-xs">(необязательно)</span>
-                                        </label>
-                                        <input
+                                        </Label>
+                                        <Input
                                             type="number"
                                             min="1"
                                             max="100"
                                             placeholder="Без ограничений"
                                             value={form.maxStudents}
                                             onChange={(e) => setForm((f) => ({ ...f, maxStudents: e.target.value }))}
-                                            className="w-full px-3 py-2.5 border border-input bg-background rounded-xl focus:outline-none focus:ring-2 focus:ring-ring text-card-foreground"
                                         />
                                     </div>
 
-                                    <div>
-                                        <label className="block text-sm font-medium text-card-foreground mb-1.5">
+                                    <div className="space-y-1.5">
+                                        <Label>
                                             Комментарий
                                             <span className="text-muted-foreground font-normal ml-1.5 text-xs">(необязательно)</span>
-                                        </label>
-                                        <textarea
+                                        </Label>
+                                        <Textarea
                                             value={form.comment}
                                             onChange={(e) => setForm((f) => ({ ...f, comment: e.target.value }))}
                                             placeholder="Например: аудитория 305, 3 этаж"
                                             rows={3}
                                             maxLength={300}
-                                            className="w-full px-3 py-2.5 border border-input bg-background rounded-xl focus:outline-none focus:ring-2 focus:ring-ring text-card-foreground resize-none text-sm"
+                                            className="resize-none text-sm"
                                         />
-                                        <div className="text-right text-xs text-muted-foreground mt-1">
-                                            {form.comment.length}/300
-                                        </div>
+                                        <div className="text-right text-xs text-muted-foreground">{form.comment.length}/300</div>
                                     </div>
 
                                     <div className="flex gap-3 pt-1">
-                                        <button
-                                            onClick={closeModal}
-                                            className="flex-1 px-4 py-2.5 border border-border text-card-foreground rounded-xl hover:bg-accent transition-colors text-sm font-medium"
-                                        >
+                                        <Button variant="outline" className="flex-1" onClick={closeModal} disabled={isSubmitting}>
                                             Отмена
-                                        </button>
-                                        <button
+                                        </Button>
+                                        <Button
+                                            className="flex-1"
                                             onClick={handleCreate}
                                             disabled={!form.startTime || isSubmitting}
-                                            className="flex-1 px-4 py-2.5 bg-primary text-primary-foreground rounded-xl hover:bg-primary-hover transition-colors text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                                         >
-                                            {isSubmitting ? (
-                                                <div className="w-4 h-4 border-2 border-primary-foreground border-t-transparent rounded-full animate-spin" />
-                                            ) : (
-                                                <>
-                                                    <Check className="w-4 h-4" />
-                                                    Создать
-                                                </>
-                                            )}
-                                        </button>
+                                            {isSubmitting
+                                                ? <div className="w-4 h-4 border-2 border-primary-foreground border-t-transparent rounded-full animate-spin" />
+                                                : <><Check className="w-4 h-4 mr-1.5" />Создать</>
+                                            }
+                                        </Button>
                                     </div>
                                 </div>
                             )}

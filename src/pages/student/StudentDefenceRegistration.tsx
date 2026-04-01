@@ -12,76 +12,15 @@ import {
     AlertTriangle,
     Trophy,
 } from 'lucide-react';
-
-type ProjectStatus = 'IN_PROGRESS' | 'APPROVED_FOR_DEFENSE' | 'DEFENDED';
-
-type Registration = {
-    id: number;
-    studentName: string;
-    registeredAt: string;
-    orderNumber?: number;
-};
-
-type DefenseSchedule = {
-    id: number;
-    startTime: string;
-    endTime?: string;
-    maxStudents?: number;
-    comment?: string;
-    registrations: Registration[];
-};
-
-type MyRegistration = {
-    id: number;
-    scheduleId: number;
-    registeredAt: string;
-    orderNumber?: number;
-};
+import { Button } from '@/components/ui/button';
+import { ProjectStatus } from '@/types/ProjectStatus';
+import { getDefenseSchedulesByWork, getMyDefenseRegistration, registerForDefense } from '@/api/endpoints';
+import { toast } from 'sonner';
+import { DefenseSchedule, MyDefenseRegistration } from '@/types/Defence';
 
 type Props = {
-    projectId: number;
     projectStatus: ProjectStatus;
     academicWorkId: number;
-};
-
-const mockSchedules: DefenseSchedule[] = [
-    {
-        id: 1,
-        startTime: '2026-04-10T09:00:00',
-        endTime: '2026-04-10T13:00:00',
-        maxStudents: 3,
-        comment: 'Кабинет 305, 3 этаж',
-        registrations: [
-            { id: 1, studentName: 'Козлов Алексей', registeredAt: '2026-03-25T10:00:00', orderNumber: 1 },
-            { id: 2, studentName: 'Сидоров Сергей', registeredAt: '2026-03-25T11:00:00', orderNumber: 2 },
-            { id: 3, studentName: 'Новикова Мария', registeredAt: '2026-03-26T09:00:00', orderNumber: 3 },
-        ],
-    },
-    {
-        id: 2,
-        startTime: '2026-04-15T14:00:00',
-        endTime: '2026-04-15T18:00:00',
-        maxStudents: 5,
-        comment: 'Аудитория 201',
-        registrations: [
-            { id: 4, studentName: 'Козлов Алексей', registeredAt: '2026-03-26T10:00:00', orderNumber: 1 },
-            { id: 5, studentName: 'Петров Иван', registeredAt: '2026-03-27T09:00:00', orderNumber: 2 },
-        ],
-    },
-    {
-        id: 3,
-        startTime: '2026-04-22T10:00:00',
-        maxStudents: 5,
-        registrations: [],
-    },
-];
-
-// Current student is registered for schedule 2 as order #2
-const mockMyRegistration: MyRegistration = {
-    id: 10,
-    scheduleId: 2,
-    registeredAt: '2026-03-27T09:00:00',
-    orderNumber: 2,
 };
 
 function formatTime(isoStr: string) {
@@ -90,10 +29,7 @@ function formatTime(isoStr: string) {
 
 function formatFullDate(isoStr: string) {
     return new Date(isoStr).toLocaleDateString('ru-RU', {
-        weekday: 'long',
-        day: 'numeric',
-        month: 'long',
-        year: 'numeric',
+        weekday: 'long', day: 'numeric', month: 'long', year: 'numeric',
     });
 }
 
@@ -101,14 +37,13 @@ const MONTH_SHORT_RU: Record<number, string> = {
     0: 'янв', 1: 'фев', 2: 'мар', 3: 'апр', 4: 'май', 5: 'июн',
     6: 'июл', 7: 'авг', 8: 'сен', 9: 'окт', 10: 'ноя', 11: 'дек',
 };
-
 const WEEK_SHORT_RU: Record<number, string> = {
     0: 'вс', 1: 'пн', 2: 'вт', 3: 'ср', 4: 'чт', 5: 'пт', 6: 'сб',
 };
 
-export function StudentDefenseRegistration({ projectId, projectStatus, academicWorkId }: Props) {
+export function StudentDefenseRegistration({ projectStatus, academicWorkId }: Props) {
     const [schedules, setSchedules] = useState<DefenseSchedule[]>([]);
-    const [myRegistration, setMyRegistration] = useState<MyRegistration | null>(null);
+    const [myRegistration, setMyRegistration] = useState<MyDefenseRegistration | null>(null);
     const [isLoading, setIsLoading] = useState(true);
     const [registeringId, setRegisteringId] = useState<number | null>(null);
     const [expandedId, setExpandedId] = useState<number | null>(null);
@@ -118,14 +53,20 @@ export function StudentDefenseRegistration({ projectId, projectStatus, academicW
     useEffect(() => {
         const load = async () => {
             setIsLoading(true);
-            // GET /api/defense/schedule/work/{academicWorkId}
-            // GET /api/defense/registration/work/{academicWorkId}
-            await new Promise((r) => setTimeout(r, 400));
-            setSchedules(mockSchedules);
-            if (projectStatus === 'APPROVED_FOR_DEFENSE') {
-                setMyRegistration(mockMyRegistration);
+            try {
+                const [schedulesData, registrationData] = await Promise.all([
+                    getDefenseSchedulesByWork(academicWorkId),
+                    projectStatus === ProjectStatus.APPROVED_FOR_DEFENSE || projectStatus === ProjectStatus.DEFENDED
+                        ? getMyDefenseRegistration(academicWorkId)
+                        : Promise.resolve(null),
+                ]);
+                setSchedules(schedulesData);
+                setMyRegistration(registrationData);
+            } catch {
+                toast.error('Не удалось загрузить расписание защит');
+            } finally {
+                setIsLoading(false);
             }
-            setIsLoading(false);
         };
         load();
     }, [academicWorkId, projectStatus]);
@@ -138,76 +79,61 @@ export function StudentDefenseRegistration({ projectId, projectStatus, academicW
         return now <= cutoff;
     };
 
-    const canRegister = (
-        schedule: DefenseSchedule
-    ): { can: boolean; reason: string } => {
-        if (projectStatus === 'DEFENDED') return { can: false, reason: 'Проект уже защищён' };
-        if (projectStatus !== 'APPROVED_FOR_DEFENSE') return { can: false, reason: 'Требуется допуск к защите' };
-
-        const scheduleStart = new Date(schedule.startTime);
-        if (now > scheduleStart) return { can: false, reason: 'Дата уже прошла' };
-
-        if (
-            schedule.maxStudents !== undefined &&
-            schedule.registrations.length >= schedule.maxStudents
-        )
+    const canRegister = (schedule: DefenseSchedule): { can: boolean; reason: string } => {
+        if (projectStatus === ProjectStatus.DEFENDED)
+            return { can: false, reason: 'Проект уже защищён' };
+        if (projectStatus !== ProjectStatus.APPROVED_FOR_DEFENSE)
+            return { can: false, reason: 'Требуется допуск к защите' };
+        if (now > new Date(schedule.startTime))
+            return { can: false, reason: 'Дата уже прошла' };
+        if (schedule.full)
             return { can: false, reason: 'Нет свободных мест' };
-
         if (myRegistration) {
-            if (myRegistration.scheduleId === schedule.id) return { can: false, reason: 'Вы уже записаны' };
-            if (isMyCurrentRegistrationActive()) {
+            if (myRegistration.scheduleId === schedule.id)
+                return { can: false, reason: 'Вы уже записаны' };
+            if (isMyCurrentRegistrationActive())
                 return { can: false, reason: 'Дождитесь окончания текущей защиты' };
-            }
         }
-
         return { can: true, reason: '' };
     };
 
     const handleRegister = async (scheduleId: number) => {
         setRegisteringId(scheduleId);
-        // POST /api/defense/register/{scheduleId}
-        await new Promise((r) => setTimeout(r, 700));
-
-        const schedule = schedules.find((s) => s.id === scheduleId);
-        if (!schedule) { setRegisteringId(null); return; }
-
-        const newReg: Registration = {
-            id: Date.now(),
-            studentName: 'Петров Иван',
-            registeredAt: new Date().toISOString(),
-            orderNumber: schedule.registrations.length + 1,
-        };
-
-        setSchedules((prev) =>
-            prev.map((s) =>
-                s.id === scheduleId ? { ...s, registrations: [...s.registrations, newReg] } : s
-            )
-        );
-        setMyRegistration({ id: Date.now(), scheduleId, registeredAt: new Date().toISOString(), orderNumber: newReg.orderNumber });
-        setRegisteringId(null);
+        try {
+            const registration = await registerForDefense(scheduleId);
+            setMyRegistration(registration);
+            setSchedules((prev) =>
+                prev.map((s) =>
+                    s.id === scheduleId
+                        ? { ...s, registeredCount: s.registeredCount + 1, full: s.maxStudents != null && s.registeredCount + 1 >= s.maxStudents }
+                        : s
+                )
+            );
+            toast.success('Вы записаны на защиту');
+        } catch (e) {
+            toast.error(e instanceof Error ? e.message : 'Не удалось записаться на защиту');
+        } finally {
+            setRegisteringId(null);
+        }
     };
 
     const myCurrentSchedule = myRegistration
         ? schedules.find((s) => s.id === myRegistration.scheduleId)
         : null;
 
-    const isLocked = projectStatus === 'IN_PROGRESS';
-    const isDefended = projectStatus === 'DEFENDED';
+    const isLocked = projectStatus === ProjectStatus.IN_PROGRESS;
+    const isDefended = projectStatus === ProjectStatus.DEFENDED;
 
     return (
         <section className="mt-8">
             <div className="flex items-center gap-3 mb-4">
-                <div
-                    className={`w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0 ${isLocked ? 'bg-muted' : isDefended ? 'bg-success/10' : 'bg-primary/10'
-                        }`}
-                >
-                    {isLocked ? (
-                        <Lock className="w-5 h-5 text-muted-foreground" />
-                    ) : isDefended ? (
-                        <Trophy className="w-5 h-5 text-success" />
-                    ) : (
-                        <Calendar className="w-5 h-5 text-primary" />
-                    )}
+                <div className={`w-9 h-9 rounded-lg flex items-center justify-center flex-shrink-0
+                    ${isLocked ? 'bg-muted' : isDefended ? 'bg-success/10' : 'bg-primary/10'}`}>
+                    {isLocked
+                        ? <Lock className="w-5 h-5 text-muted-foreground" />
+                        : isDefended
+                            ? <Trophy className="w-5 h-5 text-success" />
+                            : <Calendar className="w-5 h-5 text-primary" />}
                 </div>
                 <div>
                     <h2 className="font-semibold text-card-foreground">Расписание защит</h2>
@@ -285,45 +211,31 @@ export function StudentDefenseRegistration({ projectId, projectStatus, academicW
                     ) : (
                         schedules.map((schedule) => {
                             const d = new Date(schedule.startTime);
-                            const isFull =
-                                schedule.maxStudents !== undefined &&
-                                schedule.registrations.length >= schedule.maxStudents;
                             const isPast = now > new Date(schedule.startTime);
                             const isMySlot = myRegistration?.scheduleId === schedule.id;
                             const { can, reason } = canRegister(schedule);
                             const isExpanded = expandedId === schedule.id;
-                            const spotsLeft =
-                                schedule.maxStudents !== undefined
-                                    ? schedule.maxStudents - schedule.registrations.length
-                                    : null;
+                            const spotsLeft = schedule.maxStudents != null
+                                ? schedule.maxStudents - schedule.registeredCount
+                                : null;
 
                             return (
                                 <div
                                     key={schedule.id}
-                                    className={`bg-card border rounded-xl overflow-hidden transition-all ${isMySlot
-                                        ? 'border-primary/40 shadow-sm'
-                                        : isPast
-                                            ? 'border-border opacity-60'
-                                            : isFull && !isMySlot
-                                                ? 'border-border opacity-80'
-                                                : 'border-border'
-                                        }`}
+                                    className={`bg-card border rounded-xl overflow-hidden transition-all
+                                        ${isMySlot ? 'border-primary/40 shadow-sm'
+                                            : isPast ? 'border-border opacity-60'
+                                                : schedule.full && !isMySlot ? 'border-border opacity-80'
+                                                    : 'border-border'}`}
                                 >
                                     <div className="p-4">
                                         <div className="flex items-start gap-4">
-                                            <div
-                                                className={`rounded-xl p-3 text-center min-w-[68px] flex-shrink-0 border ${isMySlot
-                                                    ? 'bg-primary/10 border-primary/20'
-                                                    : 'bg-muted border-border'
-                                                    }`}
-                                            >
+                                            <div className={`rounded-xl p-3 text-center min-w-[68px] flex-shrink-0 border
+                                                ${isMySlot ? 'bg-primary/10 border-primary/20' : 'bg-muted border-border'}`}>
                                                 <div className="text-[11px] text-muted-foreground uppercase tracking-wide">
                                                     {MONTH_SHORT_RU[d.getMonth()]}
                                                 </div>
-                                                <div
-                                                    className={`text-2xl font-bold leading-none my-1 ${isMySlot ? 'text-primary' : 'text-card-foreground'
-                                                        }`}
-                                                >
+                                                <div className={`text-2xl font-bold leading-none my-1 ${isMySlot ? 'text-primary' : 'text-card-foreground'}`}>
                                                     {d.getDate()}
                                                 </div>
                                                 <div className="text-[11px] text-muted-foreground">
@@ -342,13 +254,12 @@ export function StudentDefenseRegistration({ projectId, projectStatus, academicW
                                                             </span>
                                                         )}
                                                     </div>
-
                                                     {isMySlot && (
                                                         <span className="px-2 py-0.5 bg-primary/10 text-primary border border-primary/20 rounded-full text-xs font-medium">
                                                             Вы записаны
                                                         </span>
                                                     )}
-                                                    {isFull && !isMySlot && (
+                                                    {schedule.full && !isMySlot && (
                                                         <span className="px-2 py-0.5 bg-destructive/10 text-destructive border border-destructive/20 rounded-full text-xs font-medium">
                                                             Заполнено
                                                         </span>
@@ -360,34 +271,24 @@ export function StudentDefenseRegistration({ projectId, projectStatus, academicW
                                                     )}
                                                 </div>
 
-                                                {/* Spots progress bar */}
                                                 {schedule.maxStudents !== undefined && (
                                                     <div className="flex items-center gap-2 mb-2">
                                                         <div className="flex-1 h-1.5 bg-muted rounded-full overflow-hidden">
                                                             <div
-                                                                className={`h-full rounded-full transition-all ${isFull ? 'bg-destructive' : 'bg-success'
-                                                                    }`}
-                                                                style={{
-                                                                    width: `${Math.min(
-                                                                        (schedule.registrations.length / schedule.maxStudents) * 100,
-                                                                        100
-                                                                    )}%`,
-                                                                }}
+                                                                className={`h-full rounded-full transition-all ${schedule.full ? 'bg-destructive' : 'bg-success'}`}
+                                                                style={{ width: `${Math.min((schedule.registeredCount / schedule.maxStudents) * 100, 100)}%` }}
                                                             />
                                                         </div>
                                                         <span className="text-xs text-muted-foreground flex-shrink-0 flex items-center gap-1">
                                                             <Users className="w-3 h-3" />
-                                                            {schedule.registrations.length}/{schedule.maxStudents}
+                                                            {schedule.registeredCount}/{schedule.maxStudents}
                                                             {spotsLeft !== null && spotsLeft > 0 && (
-                                                                <span className="text-success">
-                                                                    ({spotsLeft} своб.)
-                                                                </span>
+                                                                <span className="text-success">({spotsLeft} своб.)</span>
                                                             )}
                                                         </span>
                                                     </div>
                                                 )}
 
-                                                {/* Comment */}
                                                 {schedule.comment && (
                                                     <div className="flex items-start gap-1.5 text-xs text-muted-foreground">
                                                         <MessageSquare className="w-3 h-3 flex-shrink-0 mt-0.5" />
@@ -398,32 +299,24 @@ export function StudentDefenseRegistration({ projectId, projectStatus, academicW
 
                                             {!isPast && (
                                                 <div className="flex-shrink-0">
-                                                    <button
+                                                    <Button
+                                                        size="sm"
+                                                        variant={isMySlot ? 'outline' : can && !isLocked ? 'default' : 'outline'}
                                                         onClick={() => can && !isLocked && handleRegister(schedule.id)}
                                                         disabled={!can || isLocked || registeringId === schedule.id}
                                                         title={!can ? reason : isLocked ? 'Требуется допуск к защите' : 'Записаться'}
-                                                        className={`
-                              px-4 py-2 rounded-xl text-sm font-medium transition-all
-                              flex items-center gap-2
-                              ${isMySlot
-                                                                ? 'bg-primary/10 text-primary border border-primary/20 cursor-default'
-                                                                : can && !isLocked
-                                                                    ? 'bg-primary text-primary-foreground hover:bg-primary-hover active:scale-95'
-                                                                    : 'bg-muted text-muted-foreground border border-border cursor-not-allowed opacity-60'
-                                                            }
-                            `}
+                                                        className={isMySlot
+                                                            ? 'border-primary/20 text-primary bg-primary/10 hover:bg-primary/10 cursor-default'
+                                                            : ''}
                                                     >
                                                         {registeringId === schedule.id ? (
                                                             <div className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin" />
                                                         ) : isMySlot ? (
-                                                            <>
-                                                                <CheckCircle className="w-4 h-4" />
-                                                                Записан
-                                                            </>
+                                                            <><CheckCircle className="w-4 h-4 mr-1.5" />Записан</>
                                                         ) : (
                                                             'Записаться'
                                                         )}
-                                                    </button>
+                                                    </Button>
                                                     {!can && !isMySlot && reason && (
                                                         <p className="text-[11px] text-muted-foreground mt-1 text-center max-w-[120px]">
                                                             {reason}
@@ -433,62 +326,28 @@ export function StudentDefenseRegistration({ projectId, projectStatus, academicW
                                             )}
                                         </div>
 
-                                        {schedule.registrations.length > 0 && (
+                                        {schedule.registeredCount > 0 && (
                                             <button
                                                 onClick={() => setExpandedId(isExpanded ? null : schedule.id)}
                                                 className="mt-3 text-xs text-muted-foreground hover:text-card-foreground transition-colors flex items-center gap-1.5"
                                             >
                                                 <Users className="w-3.5 h-3.5" />
-                                                {isExpanded ? 'Скрыть список' : `Кто записан (${schedule.registrations.length})`}
-                                                {isExpanded ? (
-                                                    <ChevronUp className="w-3.5 h-3.5" />
-                                                ) : (
-                                                    <ChevronDown className="w-3.5 h-3.5" />
-                                                )}
+                                                {isExpanded ? 'Скрыть список' : `Кто записан (${schedule.registeredCount})`}
+                                                {isExpanded ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
                                             </button>
                                         )}
                                     </div>
 
-                                    {isExpanded && schedule.registrations.length > 0 && (
+                                    {isExpanded && (
                                         <div className="border-t border-border bg-muted/20 px-4 py-3">
-                                            <p className="text-xs text-muted-foreground mb-2 font-medium">
-                                                Записавшиеся студенты:
+                                            <p className="text-xs text-muted-foreground">
+                                                Записано студентов: {schedule.registeredCount}
+                                                {isMySlot && myRegistration?.orderNumber && (
+                                                    <span className="ml-2 text-primary font-medium">
+                                                        (ваш номер: #{myRegistration.orderNumber})
+                                                    </span>
+                                                )}
                                             </p>
-                                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                                                {schedule.registrations.map((reg) => {
-                                                    const isMe = isMySlot && reg.orderNumber === myRegistration?.orderNumber;
-                                                    return (
-                                                        <div
-                                                            key={reg.id}
-                                                            className={`flex items-center gap-2 p-2 rounded-lg ${isMe ? 'bg-primary/10 border border-primary/20' : 'bg-card border border-border'
-                                                                }`}
-                                                        >
-                                                            <div
-                                                                className={`w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0 ${isMe ? 'bg-primary' : 'bg-primary/10'
-                                                                    }`}
-                                                            >
-                                                                <span
-                                                                    className={`text-xs font-semibold ${isMe ? 'text-primary-foreground' : 'text-primary'
-                                                                        }`}
-                                                                >
-                                                                    {reg.studentName[0]}
-                                                                </span>
-                                                            </div>
-                                                            <span className="text-sm text-card-foreground flex-1 truncate">
-                                                                {reg.studentName}
-                                                                {isMe && (
-                                                                    <span className="text-primary text-xs ml-1">(вы)</span>
-                                                                )}
-                                                            </span>
-                                                            {reg.orderNumber && (
-                                                                <span className="text-xs text-muted-foreground flex-shrink-0">
-                                                                    #{reg.orderNumber}
-                                                                </span>
-                                                            )}
-                                                        </div>
-                                                    );
-                                                })}
-                                            </div>
                                         </div>
                                     )}
                                 </div>

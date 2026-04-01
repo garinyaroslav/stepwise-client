@@ -17,6 +17,7 @@ import { ProfileDto } from "@/types/Profile";
 import { WorkTemplate } from "@/types/WorkTemplate";
 import { AcademicWork } from "@/types/AcademicWork";
 import { ProjectDetails } from "@/types/ProjectDetails";
+import { DefenseSchedule, MyDefenseRegistration } from "@/types/Defence";
 
 export const loginReq = async (credentials: Credentials) => {
     const response = await axios.post("/auth/sessions", credentials);
@@ -477,4 +478,34 @@ export const approveExplanatoryNoteItem = async (itemId: number, teacherComment:
 
 export const rejectExplanatoryNoteItem = async (itemId: number, teacherComment: string): Promise<void> => {
     await axios.post(`/explanatory-note-item/${itemId}/rejection`, { teacherComment });
+};
+
+export const getDefenseSchedulesByWork = async (academicWorkId: number): Promise<DefenseSchedule[]> => {
+    const response = await axios.get<DefenseSchedule[]>(`/defense/schedule/work/${academicWorkId}`);
+    return response.data;
+};
+
+export const getMyDefenseRegistration = async (academicWorkId: number): Promise<MyDefenseRegistration | null> => {
+    try {
+        const response = await axios.get<MyDefenseRegistration>(`/defense/registration/work/${academicWorkId}`);
+        return response.data;
+    } catch {
+        return null;
+    }
+};
+
+export const registerForDefense = async (scheduleId: number): Promise<MyDefenseRegistration> => {
+    const response = await axios.post<MyDefenseRegistration>(`/defense/register/${scheduleId}`);
+    return response.data;
+};
+
+export const createDefenseSchedule = async (dto: {
+    academicWorkId: number;
+    startTime: string;
+    endTime?: string;
+    maxStudents?: number;
+    comment?: string;
+}): Promise<DefenseSchedule> => {
+    const response = await axios.post<DefenseSchedule>('/defense/schedule', dto);
+    return response.data;
 };
