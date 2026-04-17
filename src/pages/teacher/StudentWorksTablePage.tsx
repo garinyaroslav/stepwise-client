@@ -1,19 +1,26 @@
-import { useState, useEffect } from 'react';
-import {
-    Users, FileText, CheckCircle, XCircle, Clock, ArrowLeft,
-    ChevronRight, Award, BarChart2,
-} from 'lucide-react';
+import { approveProjectForDefense, getAcademicWorkById, getProjectsByWorkForTeacher } from '@/api/endpoints';
+import { DefendProjectModal } from '@/components/teacher/DefendProjectModal';
+import { DefenseCalendar } from '@/components/teacher/DefenseCalendar';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { cn } from '@/lib/utils';
-import { ItemStatus } from '@/types/ItemStatus';
 import { AcademicWork } from '@/types/AcademicWork';
 import { ExplanatoryNoteItem } from '@/types/ExplanatoryNoteItem';
+import { ItemStatus } from '@/types/ItemStatus';
 import { ProjectDetails } from '@/types/ProjectDetails';
-import { getAcademicWorkById, getProjectsByWorkForTeacher, approveProjectForDefense } from '@/api/endpoints';
-import { useNavigate, useParams, useLocation } from 'react-router';
-import { DefenseCalendar } from '@/components/teacher/DefenseCalendar';
 import { ProjectStatus } from '@/types/ProjectStatus';
+import {
+    ArrowLeft,
+    Award, BarChart2,
+    CheckCircle,
+    ChevronRight,
+    Clock,
+    FileText,
+    Users,
+    XCircle,
+} from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { useLocation, useNavigate, useParams } from 'react-router';
 
 const statusConfig: Record<ItemStatus, {
     label: string; color: string; bgColor: string;
@@ -35,6 +42,7 @@ export function StudentWorksTablePage() {
     const [isLoadingWork, setIsLoadingWork] = useState(true);
     const [isLoadingProjects, setIsLoadingProjects] = useState(true);
     const [error, setError] = useState<string | null>(null);
+    const [defendTarget, setDefendTarget] = useState<ProjectDetails | null>(null);
 
     const id = Number(workId);
 
@@ -68,6 +76,15 @@ export function StudentWorksTablePage() {
                     chapterTitle: work?.chapters.find((ch) => ch.index === item.orderNumber)?.title ?? '',
                 },
             }
+        );
+    };
+
+    const handleDefendSuccess = (projectId: number, grade: number) => {
+        setProjects((prev) =>
+            prev.map((p) => p.id === projectId
+                ? { ...p, status: ProjectStatus.DEFENDED, grade }
+                : p
+            )
         );
     };
 
@@ -271,10 +288,20 @@ export function StudentWorksTablePage() {
 
                                             <td className="px-6 py-4 sticky right-0 z-30 border-l border-border bg-card">
                                                 <div className="flex justify-center">
-                                                    {project.status === ProjectStatus.APPROVED_FOR_DEFENSE ? (
-                                                        <div className="inline-flex items-center gap-2 px-6 py-2.5 bg-success/10 border border-success/30 rounded-2xl">
-                                                            <CheckCircle className="w-4 h-4 text-success" />
-                                                            <span className="text-sm font-medium text-success">Допущен</span>
+                                                    {project.status === ProjectStatus.DEFENDED ? (
+                                                        <div className="inline-flex items-center gap-2 px-4 py-2.5 bg-primary/10 border border-primary/30 rounded-2xl">
+                                                            <Award className="w-4 h-4 text-primary" />
+                                                            <span className="text-base font-semibold text-primary">{project.grade ?? '—'}</span>
+                                                        </div>
+                                                    ) : project.status === ProjectStatus.APPROVED_FOR_DEFENSE ? (
+                                                        <div className="flex flex-col items-center gap-2">
+                                                            <div className="inline-flex items-center gap-2 px-4 py-2 bg-success/10 border border-success/30 rounded-2xl">
+                                                                <CheckCircle className="w-4 h-4 text-success" />
+                                                                <span className="text-sm font-medium text-success">Допущен</span>
+                                                            </div>
+                                                            <Button size="sm" variant="outline" onClick={() => setDefendTarget(project)}>
+                                                                Защитить
+                                                            </Button>
                                                         </div>
                                                     ) : allApproved ? (
                                                         <Button size="sm" onClick={() => handleApproveDefense(project.id)}>
@@ -313,6 +340,14 @@ export function StudentWorksTablePage() {
                 <DefenseCalendar
                     academicWorkId={Number(workId)}
                     workTitle={work.title}
+                />
+            )}
+
+            {defendTarget && (
+                <DefendProjectModal
+                    project={defendTarget}
+                    onClose={() => setDefendTarget(null)}
+                    onSuccess={handleDefendSuccess}
                 />
             )}
         </div>

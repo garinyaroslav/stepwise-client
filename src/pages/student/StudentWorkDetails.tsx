@@ -16,6 +16,7 @@ import {
     X,
     Check,
     CalendarClock,
+    Award,
 } from 'lucide-react';
 import { ItemStatus } from '@/types/ItemStatus';
 import { ProjectDetails } from '@/types/ProjectDetails';
@@ -229,8 +230,23 @@ export function StudentWorkDetails() {
                     )}
 
                     {!isEditing && allItemsApproved && (
-                        <div className={`mt-5 p-4 rounded-lg border ${project.status === ProjectStatus.APPROVED_FOR_DEFENSE ? 'bg-success/10 border-success' : 'bg-chart-4/10 border-chart-4'}`}>
-                            {project.status === ProjectStatus.APPROVED_FOR_DEFENSE ? (
+                        <div className={`mt-5 p-4 rounded-lg border ${project.status === ProjectStatus.DEFENDED
+                            ? 'bg-primary/10 border-primary/30'
+                            : project.status === ProjectStatus.APPROVED_FOR_DEFENSE
+                                ? 'bg-success/10 border-success'
+                                : 'bg-chart-4/10 border-chart-4'
+                            }`}>
+                            {project.status === ProjectStatus.DEFENDED ? (
+                                <div className="flex items-center gap-2">
+                                    <Award className="w-5 h-5 text-primary flex-shrink-0" />
+                                    <div>
+                                        <p className="font-semibold text-card-foreground mb-0.5">Работа защищена</p>
+                                        <p className="text-sm text-muted-foreground">
+                                            Итоговая оценка: <span className="font-semibold text-primary">{project.grade} / 5</span>
+                                        </p>
+                                    </div>
+                                </div>
+                            ) : project.status === ProjectStatus.APPROVED_FOR_DEFENSE ? (
                                 <div className="flex items-start gap-3">
                                     <CheckCircle className="w-5 h-5 text-success flex-shrink-0 mt-0.5" />
                                     <div>
@@ -478,7 +494,6 @@ export function StudentWorkDetails() {
 
             {id &&
                 <StudentDefenseRegistration
-                    projectId={project.id}
                     projectStatus={project.status}
                     academicWorkId={Number(id)}
                 />

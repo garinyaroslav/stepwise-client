@@ -472,6 +472,10 @@ export const approveProjectForDefense = async (projectId: number): Promise<void>
     await axios.post(`/project/${projectId}/approval`);
 };
 
+export const defendProject = async (projectId: number, grade: number): Promise<void> => {
+    await axios.post(`/project/${projectId}/defend`, { grade });
+};
+
 export const approveExplanatoryNoteItem = async (itemId: number, teacherComment: string): Promise<void> => {
     await axios.post(`/explanatory-note-item/${itemId}/approval`, { teacherComment });
 };
@@ -508,4 +512,17 @@ export const createDefenseSchedule = async (dto: {
 }): Promise<DefenseSchedule> => {
     const response = await axios.post<DefenseSchedule>('/defense/schedule', dto);
     return response.data;
+};
+
+export const getItemSummary = async (
+    studentId: number,
+    projectId: number,
+    itemId: number,
+    historyId: number,
+    filename: string,
+): Promise<string> => {
+    const response = await axios.get<{ summary: string }>('/explanatory-note-item/summary', {
+        params: { studentId, projectId, itemId, historyId, filename },
+    });
+    return response.data.summary;
 };

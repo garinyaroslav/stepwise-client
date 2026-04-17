@@ -6,6 +6,7 @@ export interface ProjectDetails {
     id: number;
     title: string;
     description: string;
+    grade: null | number;
     owner: UserWithProfile;
     items: ExplanatoryNoteItem[];
     status: ProjectStatus;
