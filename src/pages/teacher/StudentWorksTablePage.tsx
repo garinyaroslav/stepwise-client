@@ -1,4 +1,5 @@
 import { approveProjectForDefense, getAcademicWorkById, getProjectsByWorkForTeacher } from '@/api/endpoints';
+import { useTableRefreshListener } from '@/lib/tableEvents';
 import { DefendProjectModal } from '@/components/teacher/DefendProjectModal';
 import { DefenseCalendar } from '@/components/teacher/DefenseCalendar';
 import { Button } from '@/components/ui/button';
@@ -11,6 +12,7 @@ import { ProjectDetails } from '@/types/ProjectDetails';
 import { ProjectStatus } from '@/types/ProjectStatus';
 import {
     ArrowLeft,
+    RefreshCw,
     Award, BarChart2,
     CheckCircle,
     ChevronRight,
@@ -19,7 +21,7 @@ import {
     Users,
     XCircle,
 } from 'lucide-react';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { useLocation, useNavigate, useParams } from 'react-router';
 
 const statusConfig: Record<ItemStatus, {
@@ -43,8 +45,23 @@ export function StudentWorksTablePage() {
     const [isLoadingProjects, setIsLoadingProjects] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [defendTarget, setDefendTarget] = useState<ProjectDetails | null>(null);
+    const [isRefreshing, setIsRefreshing] = useState(false);
 
     const id = Number(workId);
+
+    const loadProjects = useCallback(async (silent = false) => {
+        if (!silent) setIsLoadingProjects(true);
+        else setIsRefreshing(true);
+        try {
+            const updated = await getProjectsByWorkForTeacher(id);
+            setProjects(updated);
+        } catch {
+            if (!silent) setError('Не удалось загрузить проекты студентов');
+        } finally {
+            if (!silent) setIsLoadingProjects(false);
+            else setIsRefreshing(false);
+        }
+    }, [id]);
 
     useEffect(() => {
         if (!id) return;
@@ -55,14 +72,15 @@ export function StudentWorksTablePage() {
             .finally(() => setIsLoadingWork(false));
     }, [id]);
 
+
     useEffect(() => {
         if (!id) return;
-        setIsLoadingProjects(true);
-        getProjectsByWorkForTeacher(id)
-            .then(setProjects)
-            .catch(() => setError('Не удалось загрузить проекты студентов'))
-            .finally(() => setIsLoadingProjects(false));
+        loadProjects();
     }, [id]);
+
+    useTableRefreshListener(useCallback(() => {
+        loadProjects(true);
+    }, [loadProjects]));
 
     const handleItemClick = (item: ExplanatoryNoteItem, project: ProjectDetails) => {
         if (item.status === ItemStatus.DRAFT) return;
@@ -99,21 +117,13 @@ export function StudentWorksTablePage() {
         }
     };
 
-    const refreshProjects = async () => {
-        if (!id) return;
-        try {
-            const updated = await getProjectsByWorkForTeacher(id);
-            setProjects(updated);
-        } catch { }
-    };
-
     const isLoading = isLoadingWork || isLoadingProjects;
 
     const totalStudents = projects.length;
     const approvedDefense = projects.filter((p) => p.status === ProjectStatus.APPROVED_FOR_DEFENSE).length;
     const pendingReview = projects.reduce((acc, p) => acc + p.items.filter((i) => i.status === 'SUBMITTED').length, 0);
     const totalApproved = projects.reduce((acc, p) => acc + p.items.filter((i) => i.status === 'APPROVED').length, 0);
-    const totalItems = projects.reduce((acc, p) => acc + p.items.length, 0);
+    const totalItems = work ? projects.length * work.countOfChapters : 0;
     const progressPercent = totalItems > 0 ? Math.round((totalApproved / totalItems) * 100) : 0;
 
     return (
@@ -198,11 +208,26 @@ export function StudentWorksTablePage() {
                 </div>
             ) : (
                 <div className="bg-card border border-border rounded-xl">
-                    <div className="px-6 py-4 border-b border-border bg-card rounded-t-xl">
-                        <h2 className="font-semibold text-card-foreground">{work?.title}</h2>
-                        <p className="text-xs text-muted-foreground mt-0.5">
-                            {work?.groupName} · {projects.length} студентов
-                        </p>
+
+                    <div className="px-6 py-4 border-b border-border bg-card rounded-t-xl flex items-center justify-between">
+                        <div>
+                            <h2 className="font-semibold text-card-foreground">{work?.title}</h2>
+                            <p className="text-xs text-muted-foreground mt-0.5">
+                                {work?.groupName} · {projects.length} студентов
+                            </p>
+                        </div>
+                        <button
+                            onClick={() => loadProjects(true)}
+                            disabled={isRefreshing}
+                            className={cn(
+                                'w-8 h-8 rounded-lg flex items-center justify-center border border-border',
+                                'text-muted-foreground hover:bg-accent hover:text-card-foreground transition-all',
+                                isRefreshing && 'opacity-60 cursor-not-allowed'
+                            )}
+                            title="Обновить таблицу"
+                        >
+                            <RefreshCw className={cn('w-3.5 h-3.5', isRefreshing && 'animate-spin')} />
+                        </button>
                     </div>
 
                     <div className="overflow-x-auto">

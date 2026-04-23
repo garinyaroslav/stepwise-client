@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import {
     FileText, Download, CheckCircle, XCircle, Clock, User,
     MessageSquare, AlertCircle, ArrowLeft, ArrowRight, Sparkles,
@@ -17,6 +17,8 @@ import {
     getItemSummary,
 } from '@/api/endpoints';
 import { SummaryPanel } from '../general/SummaryPanel';
+import { getProjectById } from '@/api/endpoints';
+import { emitTableRefresh } from '@/lib/tableEvents';
 
 const statusConfig: Record<ItemStatus, {
     label: string; color: string; bgColor: string;
@@ -42,16 +44,18 @@ export function ItemHistoryModal() {
     const navigate = useNavigate();
     const scrollRef = useRef<HTMLDivElement>(null);
 
-    const { item, project, chapterTitle } = location.state as {
+    const { item: initialItem, project, chapterTitle } = location.state as {
         item: ExplanatoryNoteItem;
         project: ProjectDetails;
         chapterTitle: string;
     };
 
+
+    const [currentItem, setCurrentItem] = useState<ExplanatoryNoteItem>(initialItem);
     const [comment, setComment] = useState('');
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [message, setMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
-    const canReview = item.status === ItemStatus.SUBMITTED;
+    const canReview = currentItem.status === ItemStatus.SUBMITTED;
 
     const [summaryText, setSummaryText] = useState('');
     const [summaryLoading, setSummaryLoading] = useState(false);
@@ -60,7 +64,7 @@ export function ItemHistoryModal() {
     const [summaryError, setSummaryError] = useState<string | null>(null);
     const [loadingHistoryId, setLoadingHistoryId] = useState<number | null>(null);
 
-    const chronological = item.history;
+    const chronological = currentItem.history;
 
     useEffect(() => {
         if (scrollRef.current) {
@@ -71,12 +75,22 @@ export function ItemHistoryModal() {
     const handleClose = () => navigate(-1);
     useEscapeKey(handleClose);
 
+    const refreshItem = useCallback(async () => {
+        try {
+            const updated = await getProjectById(project.id);
+            const updatedItem = updated.items.find(i => i.id === initialItem.id);
+            if (updatedItem) setCurrentItem(updatedItem);
+        } catch { }
+    }, [project.id, initialItem.id]);
+
     const handleApprove = async () => {
         setIsSubmitting(true);
         setMessage(null);
         try {
-            await approveExplanatoryNoteItem(item.id, comment.trim() || ' ');
+            await approveExplanatoryNoteItem(currentItem.id, comment.trim() || ' ');
             setMessage({ type: 'success', text: 'Работа успешно одобрена' });
+            await refreshItem();
+            emitTableRefresh();
             setTimeout(handleClose, 1000);
         } catch {
             setMessage({ type: 'error', text: 'Ошибка при одобрении работы' });
@@ -93,8 +107,10 @@ export function ItemHistoryModal() {
         setIsSubmitting(true);
         setMessage(null);
         try {
-            await rejectExplanatoryNoteItem(item.id, comment);
+            await rejectExplanatoryNoteItem(currentItem.id, comment);
             setMessage({ type: 'success', text: 'Работа отклонена' });
+            await refreshItem();
+            emitTableRefresh();
             setTimeout(handleClose, 1000);
         } catch {
             setMessage({ type: 'error', text: 'Ошибка при отклонении работы' });
@@ -105,7 +121,7 @@ export function ItemHistoryModal() {
 
     const handleDownload = async (historyId: number) => {
         try {
-            await downloadExplanatoryNoteFile(project.owner.id, project.id, item.id, historyId);
+            await downloadExplanatoryNoteFile(project.owner.id, project.id, currentItem.id, historyId);
         } catch {
             setMessage({ type: 'error', text: 'Ошибка при скачивании файла' });
         }
@@ -128,7 +144,7 @@ export function ItemHistoryModal() {
             const result = await getItemSummary(
                 project.owner.id,
                 project.id,
-                item.id,
+                currentItem.id,
                 historyId,
                 filename,
             );
@@ -141,7 +157,7 @@ export function ItemHistoryModal() {
         }
     };
 
-    const statusCfg = statusConfig[item.status];
+    const statusCfg = statusConfig[currentItem.status];
     const StatusIcon = statusCfg.icon;
 
     return (

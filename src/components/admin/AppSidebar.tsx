@@ -13,11 +13,6 @@ import { useState } from "react";
 import { useLogout } from "@/utils/useLogout";
 
 const items = [
-    // {
-    //   title: "Паналь управления",
-    //   url: "main",
-    //   icon: LayoutDashboard,
-    // },
     {
         title: "Пользователи",
         url: "users",
@@ -34,6 +29,7 @@ const items = [
         icon: ClipboardList,
     },
 ];
+
 export const AppSidebar = () => {
     const [menuVal, setMenuVal] = useState(items[0].title);
     const { logout } = useLogout();
