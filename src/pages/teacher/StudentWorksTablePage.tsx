@@ -325,7 +325,7 @@ export function StudentWorksTablePage() {
                                                                 <span className="text-sm font-medium text-success">Допущен</span>
                                                             </div>
                                                             <Button size="sm" variant="outline" onClick={() => setDefendTarget(project)}>
-                                                                Защитить
+                                                                Оценка
                                                             </Button>
                                                         </div>
                                                     ) : allApproved ? (
