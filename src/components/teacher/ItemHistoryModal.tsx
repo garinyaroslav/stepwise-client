@@ -60,8 +60,6 @@ export function ItemHistoryModal() {
     const [summaryText, setSummaryText] = useState('');
     const [summaryLoading, setSummaryLoading] = useState(false);
     const [summaryVisible, setSummaryVisible] = useState(false);
-    const [summaryCollapsed, setSummaryCollapsed] = useState(false);
-    const [summaryError, setSummaryError] = useState<string | null>(null);
     const [loadingHistoryId, setLoadingHistoryId] = useState<number | null>(null);
 
     const chronological = currentItem.history;
@@ -129,15 +127,13 @@ export function ItemHistoryModal() {
 
     const handleSummarize = async (historyId: number, filename: string) => {
         if (summaryVisible && loadingHistoryId === historyId && summaryText) {
-            setSummaryCollapsed(false);
+            // setSummaryCollapsed(false);
             return;
         }
 
         setSummaryText('');
-        setSummaryError(null);
         setSummaryLoading(true);
         setSummaryRequestKey(k => k + 1);
-        setSummaryCollapsed(false);
         setLoadingHistoryId(historyId);
 
         try {
@@ -150,7 +146,6 @@ export function ItemHistoryModal() {
             );
             setSummaryText(result);
         } catch {
-            setSummaryError('Не удалось получить краткое содержание');
             setSummaryText('Не удалось получить краткое содержание. Попробуйте ещё раз.');
         } finally {
             setSummaryLoading(false);

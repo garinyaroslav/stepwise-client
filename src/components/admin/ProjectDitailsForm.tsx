@@ -125,7 +125,6 @@ export const ProjectDetailsForm = () => {
                             </CardContent>
                         </Card>
 
-                        {/* Список разделов */}
                         <Card>
                             <CardHeader>
                                 <CardTitle>Обязательные разделы</CardTitle>
@@ -135,8 +134,8 @@ export const ProjectDetailsForm = () => {
                             </CardHeader>
                             <CardContent>
                                 <div className="space-y-3">
-                                    {academicProject?.academicWorkChapters && academicProject.academicWorkChapters.length > 0 ? (
-                                        academicProject.academicWorkChapters
+                                    {academicProject?.chapters && academicProject.chapters.length > 0 ? (
+                                        academicProject.chapters
                                             .sort((a, b) => a.index - b.index)
                                             .map((chapter) => (
                                                 <div

@@ -111,7 +111,7 @@ export function StudentWorkDetails() {
         setUploadingItemId(key);
     };
 
-    const handleUpload = async (key: number) => {
+    const handleUpload = async () => {
         if (!selectedFile || !project) return;
         try {
             await draftExplanatoryNoteItem(project.id, selectedFile);
@@ -401,7 +401,7 @@ export function StudentWorkDetails() {
                                                     <Button
                                                         variant="outline"
                                                         className="w-full border-success text-success hover:bg-success/10 hover:text-success focus:ring-success"
-                                                        onClick={() => handleUpload(uploadKey)}
+                                                        onClick={() => handleUpload()}
                                                     >
                                                         <Upload className="w-4 h-4 mr-2" />
                                                         Загрузить файл

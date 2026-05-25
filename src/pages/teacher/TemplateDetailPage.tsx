@@ -1,10 +1,10 @@
-import { ArrowLeft, Edit, Calendar, FileText, Clock } from 'lucide-react';
+import { getTemplate } from '@/api/endpoints';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
-import { useLocation, useNavigate, useParams } from 'react-router';
-import { getTemplate } from '@/api/endpoints';
-import { useQuery } from '@tanstack/react-query';
 import { getWorkTypeNameByType } from '@/utils/getWorkTypeNameByType';
+import { useQuery } from '@tanstack/react-query';
+import { ArrowLeft, Clock, Edit, FileText } from 'lucide-react';
+import { useLocation, useNavigate, useParams } from 'react-router';
 
 export function TemplateDetailPage() {
     const navigate = useNavigate();
