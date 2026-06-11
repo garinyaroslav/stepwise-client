@@ -36,6 +36,7 @@ import { Label } from '@/components/ui/label';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { StudentDefenseRegistration } from './StudentDefenceRegistration';
 import { ProjectStatus } from '@/types/ProjectStatus';
+import axios from 'axios';
 
 const statusConfig: Record<
     ItemStatus,
@@ -46,6 +47,8 @@ const statusConfig: Record<
     APPROVED: { label: 'Одобрено', variant: 'default', icon: CheckCircle },
     REJECTED: { label: 'Отклонено', variant: 'destructive', icon: XCircle },
 };
+
+const MAX_FILE_SIZE = 2 * 1024 * 1024;
 
 export function StudentWorkDetails() {
     const { id } = useParams<{ id: string }>();
@@ -119,8 +122,12 @@ export function StudentWorkDetails() {
             setUploadingItemId(null);
             setSelectedFile(null);
             await fetchData();
-        } catch (error) {
-            toast.error(error instanceof Error ? error.message : 'Ошибка загрузки файла');
+        } catch (error: unknown) {
+            if (axios.isAxiosError(error) && error.response?.status === 413) {
+                toast.error('Файл слишком большой. Максимальный размер: 2 МБ.');
+            } else {
+                toast.error(error instanceof Error ? error.message : 'Ошибка загрузки файла');
+            }
         }
     };
 
@@ -376,6 +383,23 @@ export function StudentWorkDetails() {
                                                         onChange={(e) => {
                                                             const f = e.target.files?.[0];
                                                             if (f) handleFileSelect(uploadKey, f);
+                                                        }}
+                                                        className="hidden"
+                                                        accept=".pdf"
+                                                    />
+                                                    <input
+                                                        type="file"
+                                                        id={fileInputId}
+                                                        onChange={(e) => {
+                                                            const f = e.target.files?.[0];
+                                                            if (f) {
+                                                                if (f.size > MAX_FILE_SIZE) {
+                                                                    toast.error(`Файл слишком большой (${(f.size / 1024 / 1024).toFixed(1)} МБ). Максимальный размер: 2 МБ.`);
+                                                                    e.target.value = '';
+                                                                    return;
+                                                                }
+                                                                handleFileSelect(uploadKey, f);
+                                                            }
                                                         }}
                                                         className="hidden"
                                                         accept=".pdf"

@@ -41,7 +41,6 @@ export const AdminAddForm = () => {
             });
 
             if (res.status === HttpStatusCode.Created) {
-                console.log("Admin created:", data);
                 toast.success("Администратор успешно создан.");
                 downloadExcelFileWithXLSX(data.username, data.email, data.password);
                 form.reset();

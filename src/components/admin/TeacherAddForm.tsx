@@ -41,7 +41,6 @@ export const TeacherAddForm = () => {
             });
 
             if (res.status === HttpStatusCode.Created) {
-                console.log("Teacher created:", data);
                 downloadExcelFileWithXLSX(data.username, data.email, data.password);
                 toast.success("Преподаватель успешно создан.");
                 form.reset();

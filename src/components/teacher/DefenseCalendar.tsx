@@ -16,9 +16,9 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
-import { getDefenseSchedulesByWork, createDefenseSchedule } from '@/api/endpoints';
+import { getDefenseSchedulesByWork, createDefenseSchedule, deleteDefenceSchedule, getDefenseScheduleRegistrations } from '@/api/endpoints';
 import { toast } from 'sonner';
-import { DefenseSchedule } from '@/types/Defence';
+import { DefenseSchedule, RegistrationDetails } from '@/types/Defence';
 
 type CreateForm = {
     startTime: string;
@@ -59,6 +59,7 @@ export function DefenseCalendar({ academicWorkId, workTitle }: Props) {
     const today = new Date();
     const defaultMonth = today.getMonth() === 11 ? 0 : today.getMonth() + 1;
     const defaultYear = today.getMonth() === 11 ? today.getFullYear() + 1 : today.getFullYear();
+    const [scheduleRegistrations, setScheduleRegistrations] = useState<RegistrationDetails[]>([]);
 
     const [currentYear, setCurrentYear] = useState(defaultYear);
     const [currentMonth, setCurrentMonth] = useState(defaultMonth);
@@ -125,6 +126,12 @@ export function DefenseCalendar({ academicWorkId, workTitle }: Props) {
         e.stopPropagation();
         setSelectedSchedule(schedule);
         setSelectedDay(null);
+
+        setScheduleRegistrations([]);
+        getDefenseScheduleRegistrations(schedule.id)
+            .then(setScheduleRegistrations)
+            .catch(() => toast.error('Не удалось загрузить список студентов'));
+
         setShowModal(true);
     };
 
@@ -168,10 +175,15 @@ export function DefenseCalendar({ academicWorkId, workTitle }: Props) {
         }
     };
 
-    const handleDelete = (scheduleId: number) => {
-        setSchedules((prev) => prev.filter((s) => s.id !== scheduleId));
-        toast.success('Слот удалён');
-        closeModal();
+    const handleDelete = async (scheduleId: number) => {
+        try {
+            await deleteDefenceSchedule(scheduleId);
+            setSchedules((prev) => prev.filter((s) => s.id !== scheduleId));
+            toast.success('Временной интервал удалён');
+            closeModal();
+        } catch {
+            toast.error('Не удалось удалить временной интервал');
+        }
     };
 
     const formatSelectedDate = (day: number) =>
@@ -287,7 +299,7 @@ export function DefenseCalendar({ academicWorkId, workTitle }: Props) {
                                                     >
                                                         <Clock className="w-3 h-3 flex-shrink-0" />
                                                         <span className="truncate">{formatTime(schedule.startTime)}</span>
-                                                        {schedule.maxStudents !== undefined && (
+                                                        {schedule.maxStudents !== undefined && schedule.maxStudents !== null && (
                                                             <span className="ml-auto flex-shrink-0 opacity-70 text-[10px]">
                                                                 {schedule.registeredCount}/{schedule.maxStudents}
                                                             </span>
@@ -331,7 +343,7 @@ export function DefenseCalendar({ academicWorkId, workTitle }: Props) {
                         <div className="p-5 border-b border-border flex items-start justify-between">
                             <div>
                                 <h3 className="font-semibold text-card-foreground text-lg">
-                                    {selectedSchedule ? 'Слот защиты' : 'Новый слот защиты'}
+                                    {selectedSchedule ? 'Временной интервал' : 'Новый временной интервал'}
                                 </h3>
                                 <p className="text-sm text-muted-foreground mt-0.5">
                                     {selectedSchedule
@@ -360,7 +372,7 @@ export function DefenseCalendar({ academicWorkId, workTitle }: Props) {
                                         </div>
                                     </div>
 
-                                    {selectedSchedule.maxStudents !== undefined && (
+                                    {selectedSchedule.maxStudents !== undefined && selectedSchedule.maxStudents !== null && (
                                         <div className="flex items-center gap-3 p-3 bg-muted/50 rounded-xl">
                                             <div className="w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
                                                 <Users className="w-5 h-5 text-primary" />
@@ -394,11 +406,35 @@ export function DefenseCalendar({ academicWorkId, workTitle }: Props) {
                                         </div>
                                     )}
 
-                                    <div className="text-center py-3 text-sm text-muted-foreground">
-                                        {selectedSchedule.registeredCount > 0
-                                            ? `Записано студентов: ${selectedSchedule.registeredCount}`
-                                            : 'Никто ещё не записался'}
-                                    </div>
+                                    {scheduleRegistrations.length > 0 ? (
+                                        <div className="flex items-start gap-3 p-3 bg-muted/50 rounded-xl">
+                                            <Users className="w-5 h-5 text-primary flex-shrink-0 mt-0.5" />
+                                            <div className="flex-1 min-w-0">
+                                                <p className="text-xs text-muted-foreground mb-2">
+                                                    Записанные студенты ({scheduleRegistrations.length})
+                                                </p>
+                                                <ul className="space-y-1">
+                                                    {scheduleRegistrations.map((reg) => (
+                                                        <li key={reg.registrationId} className="text-sm text-card-foreground flex justify-between">
+                                                            <span>{reg.firstName && reg.lastName
+                                                                ? `${reg.lastName} ${reg.firstName}`
+                                                                : reg.username}
+                                                            </span>
+                                                            {reg.orderNumber && (
+                                                                <span className="text-xs text-muted-foreground ml-2">№{reg.orderNumber}</span>
+                                                            )}
+                                                        </li>
+                                                    ))}
+                                                </ul>
+                                            </div>
+                                        </div>
+                                    ) : (
+                                        <div className="text-center py-3 text-sm text-muted-foreground">
+                                            {selectedSchedule.registeredCount > 0
+                                                ? 'Загрузка списка...'
+                                                : 'Никто ещё не записался'}
+                                        </div>
+                                    )}
 
                                     <Button
                                         variant="outline"
@@ -406,7 +442,7 @@ export function DefenseCalendar({ academicWorkId, workTitle }: Props) {
                                         onClick={() => handleDelete(selectedSchedule.id)}
                                     >
                                         <Trash2 className="w-4 h-4 mr-2" />
-                                        Удалить слот
+                                        Удалить временной интервал
                                     </Button>
                                 </div>
                             ) : (

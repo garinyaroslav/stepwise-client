@@ -18,3 +18,13 @@ export type MyDefenseRegistration = {
     registeredAt: string;
     orderNumber?: number;
 };
+
+export type RegistrationDetails = {
+    registrationId: number;
+    studentId: number;
+    firstName?: string;
+    lastName?: string;
+    username: string;
+    orderNumber?: number;
+    registeredAt: string;
+};

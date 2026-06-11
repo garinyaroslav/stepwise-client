@@ -38,7 +38,6 @@ export const GroupsManagement = () => {
     });
     const onSubmit = async (data: z.infer<typeof groupNameScheme>) => {
         try {
-            console.log(data);
             createGroup({
                 name: data.groupName,
                 studentIds: [],

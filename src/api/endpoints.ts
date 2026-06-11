@@ -17,7 +17,7 @@ import { ProfileDto } from "@/types/Profile";
 import { WorkTemplate } from "@/types/WorkTemplate";
 import { AcademicWork } from "@/types/AcademicWork";
 import { ProjectDetails } from "@/types/ProjectDetails";
-import { DefenseSchedule, MyDefenseRegistration } from "@/types/Defence";
+import { DefenseSchedule, MyDefenseRegistration, RegistrationDetails } from "@/types/Defence";
 
 export const loginReq = async (credentials: Credentials) => {
     const response = await axios.post("/auth/sessions", credentials);
@@ -280,7 +280,7 @@ export const createAcademicWork = async (
 
 export const exportGroupCredentials = async (groupId: number) => {
     try {
-        const res = await axios.get(`/user/student/${groupId}/export`, { responseType: "blob" });
+        const res = await axios.get(`/user/student/${groupId}/exportation`, { responseType: "blob" });
 
         if (res.status !== HttpStatusCode.Ok)
             throw new Error("Error while export group credentials");
@@ -511,6 +511,16 @@ export const createDefenseSchedule = async (dto: {
     comment?: string;
 }): Promise<DefenseSchedule> => {
     const response = await axios.post<DefenseSchedule>('/defense/schedule', dto);
+    return response.data;
+};
+
+export const deleteDefenceSchedule = async (scheduleId: number): Promise<DefenseSchedule> => {
+    const response = await axios.delete<DefenseSchedule>(`/defense/schedule/${scheduleId}`);
+    return response.data;
+};
+
+export const getDefenseScheduleRegistrations = async (scheduleId: number): Promise<RegistrationDetails[]> => {
+    const response = await axios.get<RegistrationDetails[]>(`/defense/schedule/${scheduleId}/registrations`);
     return response.data;
 };
 

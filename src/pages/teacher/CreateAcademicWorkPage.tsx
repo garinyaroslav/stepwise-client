@@ -91,15 +91,6 @@ export function CreateAcademicWorkPage() {
 
         setIsSubmitting(true);
         try {
-            console.log({
-                groupId: selectedGroupId!,
-                workTemplateId: Number(selectedTemplateId),
-                deadlines: deadlines.map((d) => ({
-                    chapterIndex: d.chapterIndex,
-                    deadline: new Date(d.deadline),
-                })),
-            });
-
             await createAcademicWork({
                 groupId: selectedGroupId!,
                 workTemplateId: Number(selectedTemplateId),

@@ -93,8 +93,6 @@ export function TemplatesManagement() {
                 </div>
             );
 
-        console.log(templates)
-
         return (
             <div className="divide-y divide-border">
                 {templates.map((template) => (

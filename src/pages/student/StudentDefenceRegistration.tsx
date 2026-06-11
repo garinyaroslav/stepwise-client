@@ -14,9 +14,9 @@ import {
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ProjectStatus } from '@/types/ProjectStatus';
-import { getDefenseSchedulesByWork, getMyDefenseRegistration, registerForDefense } from '@/api/endpoints';
+import { getDefenseScheduleRegistrations, getDefenseSchedulesByWork, getMyDefenseRegistration, registerForDefense } from '@/api/endpoints';
 import { toast } from 'sonner';
-import { DefenseSchedule, MyDefenseRegistration } from '@/types/Defence';
+import { DefenseSchedule, MyDefenseRegistration, RegistrationDetails } from '@/types/Defence';
 
 type Props = {
     projectStatus: ProjectStatus;
@@ -47,6 +47,8 @@ export function StudentDefenseRegistration({ projectStatus, academicWorkId }: Pr
     const [isLoading, setIsLoading] = useState(true);
     const [registeringId, setRegisteringId] = useState<number | null>(null);
     const [expandedId, setExpandedId] = useState<number | null>(null);
+    const [scheduleRegistrationsMap, setScheduleRegistrationsMap] = useState<Record<number, RegistrationDetails[]>>({});
+    const [loadingRegistrationsId, setLoadingRegistrationsId] = useState<number | null>(null);
 
     const now = new Date();
 
@@ -70,6 +72,25 @@ export function StudentDefenseRegistration({ projectStatus, academicWorkId }: Pr
         };
         load();
     }, [academicWorkId, projectStatus]);
+
+    const handleToggleExpand = async (scheduleId: number) => {
+        if (expandedId === scheduleId) {
+            setExpandedId(null);
+            return;
+        }
+        setExpandedId(scheduleId);
+        if (!scheduleRegistrationsMap[scheduleId]) {
+            setLoadingRegistrationsId(scheduleId);
+            try {
+                const regs = await getDefenseScheduleRegistrations(scheduleId);
+                setScheduleRegistrationsMap(prev => ({ ...prev, [scheduleId]: regs }));
+            } catch {
+                toast.error('Не удалось загрузить список студентов');
+            } finally {
+                setLoadingRegistrationsId(null);
+            }
+        }
+    };
 
     const isMyCurrentRegistrationActive = (): boolean => {
         if (!myRegistration) return false;
@@ -271,7 +292,7 @@ export function StudentDefenseRegistration({ projectStatus, academicWorkId }: Pr
                                                     )}
                                                 </div>
 
-                                                {schedule.maxStudents !== undefined && (
+                                                {schedule.maxStudents !== undefined && schedule.maxStudents !== null && (
                                                     <div className="flex items-center gap-2 mb-2">
                                                         <div className="flex-1 h-1.5 bg-muted rounded-full overflow-hidden">
                                                             <div
@@ -328,7 +349,7 @@ export function StudentDefenseRegistration({ projectStatus, academicWorkId }: Pr
 
                                         {schedule.registeredCount > 0 && (
                                             <button
-                                                onClick={() => setExpandedId(isExpanded ? null : schedule.id)}
+                                                onClick={() => handleToggleExpand(schedule.id)}
                                                 className="mt-3 text-xs text-muted-foreground hover:text-card-foreground transition-colors flex items-center gap-1.5"
                                             >
                                                 <Users className="w-3.5 h-3.5" />
@@ -340,14 +361,38 @@ export function StudentDefenseRegistration({ projectStatus, academicWorkId }: Pr
 
                                     {isExpanded && (
                                         <div className="border-t border-border bg-muted/20 px-4 py-3">
-                                            <p className="text-xs text-muted-foreground">
-                                                Записано студентов: {schedule.registeredCount}
-                                                {isMySlot && myRegistration?.orderNumber && (
-                                                    <span className="ml-2 text-primary font-medium">
-                                                        (ваш номер: #{myRegistration.orderNumber})
-                                                    </span>
-                                                )}
-                                            </p>
+                                            {loadingRegistrationsId === schedule.id ? (
+                                                <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                                                    <div className="w-3 h-3 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+                                                    Загрузка...
+                                                </div>
+                                            ) : scheduleRegistrationsMap[schedule.id] && scheduleRegistrationsMap[schedule.id].length > 0 ? (
+                                                <ul className="space-y-1.5">
+                                                    {scheduleRegistrationsMap[schedule.id].map(reg => (
+                                                        <li key={reg.registrationId} className="text-sm text-card-foreground flex justify-between">
+                                                            <span>
+                                                                {reg.firstName && reg.lastName
+                                                                    ? `${reg.lastName} ${reg.firstName}`
+                                                                    : reg.username}
+                                                            </span>
+                                                            {reg.orderNumber && (
+                                                                <span className="text-xs text-muted-foreground ml-2">№{reg.orderNumber}</span>
+                                                            )}
+                                                        </li>
+                                                    ))}
+                                                </ul>
+                                            ) : (
+                                                <p className="text-xs text-muted-foreground">
+                                                    {schedule.registeredCount > 0
+                                                        ? 'Список загружается...'
+                                                        : 'Никто ещё не записался'}
+                                                </p>
+                                            )}
+                                            {isMySlot && myRegistration?.orderNumber && (
+                                                <p className="text-xs text-primary mt-2 font-medium">
+                                                    Ваш порядковый номер: #{myRegistration.orderNumber}
+                                                </p>
+                                            )}
                                         </div>
                                     )}
                                 </div>

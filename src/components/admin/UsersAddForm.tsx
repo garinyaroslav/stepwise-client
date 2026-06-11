@@ -62,7 +62,6 @@ export const UsersAddForm = () => {
             });
 
             if (res.status === HttpStatusCode.Created) {
-                console.log("Student created:", data);
                 downloadExcelFileWithXLSX(data.username, data.email, data.password);
                 toast.success("Студент успешно создан.");
                 form.reset();
