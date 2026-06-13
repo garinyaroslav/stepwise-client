@@ -98,7 +98,7 @@ export function TemplateDetailPage() {
                     </div>
                 ) : (
                     <div className="space-y-4">
-                        {template.chapters.map((chapter, index) => (
+                        {template.chapters.sort((a, b) => a.index - b.index).map((chapter, index) => (
                             <div
                                 key={chapter.index}
                                 className="p-5 border border-border rounded-lg hover:border-primary/50 transition-colors"

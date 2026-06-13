@@ -57,7 +57,7 @@ export function TemplateModal() {
                 workTitle: template.workTitle,
                 workDescription: template.workDescription,
                 type: template.type,
-                chapters: template.chapters.map((ch) => ({
+                chapters: template.chapters.sort((a, b) => a.index - b.index).map((ch) => ({
                     index: ch.index,
                     title: ch.title,
                     description: ch.description ?? '',
@@ -208,10 +208,12 @@ export function TemplateModal() {
                                 <div>
                                     <div className="flex items-center justify-between mb-4">
                                         <h3 className="font-semibold">Разделы пояснительной записки</h3>
-                                        <Button type="button" size="sm" onClick={handleAddChapter}>
-                                            <Plus className="w-4 h-4" />
-                                            Добавить раздел
-                                        </Button>
+                                        {!isEdit &&
+                                            <Button type="button" size="sm" onClick={handleAddChapter}>
+                                                <Plus className="w-4 h-4" />
+                                                Добавить раздел
+                                            </Button>
+                                        }
                                     </div>
 
                                     {fields.length === 0 ? (
@@ -224,6 +226,7 @@ export function TemplateModal() {
                                             form={form}
                                             onRemove={remove}
                                             onMove={move}
+                                            isEdit={isEdit}
                                         />
                                     )}
 

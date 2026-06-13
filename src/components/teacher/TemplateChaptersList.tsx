@@ -26,6 +26,7 @@ interface TemplateChaptersListProps {
     form: UseFormReturn<TemplateFormValues>;
     onRemove: (index: number) => void;
     onMove: (fromIndex: number, toIndex: number) => void;
+    isEdit: boolean;
 }
 
 export const TemplateChaptersList: React.FC<TemplateChaptersListProps> = ({
@@ -33,6 +34,7 @@ export const TemplateChaptersList: React.FC<TemplateChaptersListProps> = ({
     form,
     onRemove,
     onMove,
+    isEdit,
 }) => {
     const sensors = useSensors(
         useSensor(PointerSensor),
@@ -50,6 +52,23 @@ export const TemplateChaptersList: React.FC<TemplateChaptersListProps> = ({
         }
     };
 
+    if (isEdit) {
+        return (
+            <div className="space-y-3">
+                {fields.map((field, index) => (
+                    <TemplateModalChapter
+                        key={field.id}
+                        index={index}
+                        form={form}
+                        onRemove={() => onRemove(index)}
+                        isDraggable={false}
+                        showRemove={false}
+                    />
+                ))}
+            </div>
+        );
+    }
+
     return (
         <DndContext
             sensors={sensors}
@@ -66,6 +85,8 @@ export const TemplateChaptersList: React.FC<TemplateChaptersListProps> = ({
                             index={index}
                             form={form}
                             onRemove={() => onRemove(index)}
+                            isDraggable={true}
+                            showRemove={true}
                         />
                     ))}
                 </div>
