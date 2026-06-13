@@ -57,7 +57,7 @@ function formatTime(isoStr: string) {
 
 export function DefenseCalendar({ academicWorkId, workTitle }: Props) {
     const today = new Date();
-    const defaultMonth = today.getMonth() === 11 ? 0 : today.getMonth() + 1;
+    const defaultMonth = today.getMonth() === 11 ? 0 : today.getMonth();
     const defaultYear = today.getMonth() === 11 ? today.getFullYear() + 1 : today.getFullYear();
     const [scheduleRegistrations, setScheduleRegistrations] = useState<RegistrationDetails[]>([]);
 
